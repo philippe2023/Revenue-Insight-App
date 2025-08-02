@@ -1,0 +1,121 @@
+# Hotel Event Planning & Revenue Forecasting Tool
+
+## Overview
+This web-based Flask application allows hotel revenue managers to plan for upcoming events and input revenue, ADR (Average Daily Rate), and occupancy forecasts. It replaces an Excel-based workflow with a modern, responsive web interface, providing improved usability and data persistence for hotel revenue management, event planning, and performance analysis. The project aims to provide comprehensive tools for forecasting, actuals tracking, task management, and data-driven decision-making in the hospitality industry.
+
+## User Preferences
+Preferred communication style: Simple, everyday language.
+Recent Enhancement Requests:
+- User requested management pages for hotels and events (create, edit, delete)
+- User wanted search functionality to find properties and view saved forecasts
+- User requested tracking of who made changes and when
+- User wanted navigation bar with search functionality
+- User requested home page with usage instructions
+- User requested personal profile page to view all their changes
+- User wanted dark mode and light mode toggle for every view
+- User requested comprehensive hotel actuals upload/download system
+- User wanted cleaner navigation with dropdown organization
+- User requested separate analysis tables for actual, baseline, and impact data
+- User wanted event filtering to compare actuals vs forecast targets
+- User requested professional homepage design suitable for hotel management firm deployment
+- User wanted featured hotel cards section for direct hotel access and search functionality
+- User requested modern and production-ready styling across all pages
+- User requested modernized forms with gradient hero sections and professional styling
+- User wanted Excel upload functionality for hotels and events with specific format requirements
+- User wanted enhanced hotel data structure with hotel_link and address_link fields
+- User wanted improved hotel card visibility on homepage with enhanced styling
+- User requested user activity tracking page to view all interactions across the platform
+- User wanted Excel upload to be less restrictive by using column order instead of exact name matching
+- User requested detailed hotel and event pages with clickable website links and comprehensive information display
+- User wanted enhanced homepage design with modern hotel cards featuring images and professional styling
+- User requested hotel statistics and forecasting activity tracking on detail pages
+- User wanted proper navigation between hotels, events, and forecasts with cross-referencing
+- User requested fixed actuals dashboard functionality with proper revenue impact calculations
+- User reported Chart.js visualization issues and requested comprehensive Chart.js debugging and fixes
+- User reported user profile functionality broken and requested immediate fix
+- User requested secure user authentication system with login/logout/register functionality and session protection
+- User requested edit buttons on hotel and event pages with image upload functionality via URL
+- User requested commenting system for hotels and events where users can leave comments and others can reply
+- User requested comprehensive task assignment system with calendar integration, user following, and collaborative task management
+- User requested Netflix-style carousels for quick hotel and event browsing on home page
+- User requested hotel assignment functionality to assign hotels to team members or self
+- User requested ability to minimize/expand carousels on dashboard with persistent state
+- User requested hotel-specific analytics sections on individual hotel detail pages with expandable table and graph views
+- User requested personalized performance recommendation engine and automatic forecast data validation
+- User requested hotel ranking system comparing hotels based on KPIs (occupancy, ADR, revenue) with filter options
+- User wanted ranking tables in minimized form with expandable graphs and comparison by actuals, forecast, or impact
+- User requested "All Time" period option for hotel rankings to show historical performance
+- User requested AI chat system that returns pure database results without hardcoded responses, accessing all database tables for natural language queries
+- User requested comprehensive Location-Based Event Finder & Exporter with web scraping capabilities instead of API connections
+- User reported event names not displaying correctly in search results and requested improved scraping logic
+- User requested focus on major hotel-demand driving events (sports, trade fairs, conferences) instead of general Eventbrite events
+- User wanted to drop existing search history and restart with new approach focused on big events
+- User requested events found by Event Finder appear in main events list and be manageable like regular events
+- User requested dual forecasting system: Event Forecasting (renamed from "Forecast") and Monthly Forecasting with calendar view
+- User wanted monthly forecast to show full year calendar with daily editing capability
+- User requested event forecast data to integrate and display in monthly calendar view
+- User wanted Excel/CSV upload/download functionality for monthly forecasts with template download
+- User requested reversion of monthly forecast from complex calendar to simple table format with direct ADR/occupancy/revenue entry
+- User wanted monthly forecast to display all referenced events for hotel at a glance with auto-save functionality
+- User requested switching back to calendar view instead of table format for better visualization
+- User wanted calendar-style monthly forecast with direct input fields in each day cell for Revenue, ADR, and Occupancy
+- User requested fixing auto-save functionality and adding manual save button for data safety
+- User wanted hotel events integrated into monthly calendar display on their respective dates with clickable links to view event details
+- User requested referenced events section to be collapsible and minimized by default
+- User requested navbar redesign: rename app to "Revenue Insight", move AI Chat to user dropdown, remove hotel info/change buttons, reorganize menu structure, and make responsive
+- User requested AI chat enhancement: connect to Llama 3.2, implement RAG functionality using all database tables (actuals, performance, forecasts, rankings) for revenue management questions
+
+## System Architecture
+The application follows a Model-View-Controller (MVC) architecture with Flask, designed as a monolithic application prioritizing ease of use and quick deployment.
+
+### Technology Stack
+- **Backend**: Python 3.x with Flask
+- **Database**: SQLite (development), PostgreSQL (production)
+- **ORM**: SQLAlchemy with Flask-SQLAlchemy
+- **Frontend**: Server-side rendered HTML templates with Jinja2, Bootstrap 5, Tailwind CSS
+- **JavaScript**: Vanilla JS for interactive features and AJAX
+- **Styling**: Tailwind CSS with Bootstrap components for responsive design, consistent dark/light theme support.
+
+### Key Features & Design Patterns
+- **Comprehensive Data Models**: Manages User, Hotel, Event, Comment, EventForecast, MonthlyForecast, HotelActuals, Task, TaskComment, UserTaskFollow, EventSearch, ExternalEvent, and EventSearchExport data.
+- **Full CRUD Operations**: For hotels and events, including image upload.
+- **Dual Forecasting System**: Supports Event-based and Monthly (daily) forecasting with integrated event display.
+- **Hotel Actuals System**: Upload/download, analysis dashboard with actual, baseline, and impact views.
+- **Collaborative Features**: Threaded commenting for hotels/events, comprehensive task management with calendar integration, user following, and hotel assignment.
+- **User Authentication**: Secure login/logout/register, session management, user profiles, and activity tracking.
+- **Enhanced UI/UX**: Professional landing page, modern forms, Netflix-style carousels, responsive design, and persistent theme toggling.
+- **Advanced Data Analysis**: Hotel-specific analytics, performance recommendation engine, forecast data validation, and a hotel ranking system based on KPIs.
+- **Location-Based Event Finder**: Web scraping for major hotel-demand driving events, search history, and export capabilities.
+- **AI Chat Integration**: Designed for natural language queries against the database, with RAG functionality for revenue management questions.
+- **Real-time Saving**: JavaScript-powered auto-save for data input.
+
+### Application Structure
+- **Flask App** (`app.py`): Main configuration.
+- **Routes** (`routes.py`): Request handling and business logic.
+- **Data Initialization** (`data_init.py`): Sample data seeding.
+- **Templates**: Jinja2 templating for HTML.
+- **Static Assets**: CSS and JavaScript.
+
+## External Dependencies
+
+### Python Packages
+- **Flask**: Web framework.
+- **Flask-SQLAlchemy**: ORM.
+- **Werkzeug**: WSGI utilities.
+- **Pandas**: Data manipulation for export.
+- **BeautifulSoup**: Web scraping for Event Finder.
+
+### Frontend Libraries
+- **Bootstrap 5**: UI components and JavaScript.
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Font Awesome**: Icon library.
+- **Chart.js**: Data visualization (with ongoing debugging).
+- **FullCalendar**: Calendar integration for task management.
+
+### Database
+- **SQLite**: Development database.
+- **PostgreSQL**: Production-ready relational database.
+
+### AI/ML
+- **Llama 3.2**: Planned integration for AI chat system.
+```
