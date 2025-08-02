@@ -12,12 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { loginSchema, registerSchema, type LoginData, type RegisterData } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Redirect if already authenticated
+  if (user) {
+    setLocation("/");
+    return null;
+  }
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
@@ -26,11 +34,14 @@ export default function AuthPage() {
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/auth/user"], user);
+      // Force a refetch to ensure state is synchronized
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.firstName || user.email}`,
       });
-      setLocation("/");
+      // Small delay to ensure query update completes
+      setTimeout(() => setLocation("/"), 100);
     },
     onError: (error: any) => {
       toast({
