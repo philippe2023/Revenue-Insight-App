@@ -30,8 +30,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    refetchOnWindowFocus: true,
+    refetchInterval: 30 * 1000, // Check every 30 seconds
   });
 
   const loginMutation = useMutation({

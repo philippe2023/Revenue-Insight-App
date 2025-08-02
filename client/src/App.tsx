@@ -30,18 +30,29 @@ function Router() {
     );
   }
 
+  if (!user) {
+    return (
+      <Switch>
+        <Route path="/auth" component={AuthPage} />
+        <Route>
+          <Redirect to="/auth" />
+        </Route>
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/auth">
-        {user ? <Redirect to="/" /> : <AuthPage />}
+        <Redirect to="/" />
       </Route>
-      <Route path="/" component={() => user ? <Dashboard /> : <Redirect to="/auth" />} />
-      <Route path="/hotels" component={() => user ? <Hotels /> : <Redirect to="/auth" />} />
-      <Route path="/forecasting" component={() => user ? <Forecasting /> : <Redirect to="/auth" />} />
-      <Route path="/events" component={() => user ? <Events /> : <Redirect to="/auth" />} />
-      <Route path="/tasks" component={() => user ? <Tasks /> : <Redirect to="/auth" />} />
-      <Route path="/analytics" component={() => user ? <Analytics /> : <Redirect to="/auth" />} />
-      <Route path="/ai-chat" component={() => user ? <AIChat /> : <Redirect to="/auth" />} />
+      <Route path="/" component={Dashboard} />
+      <Route path="/hotels" component={Hotels} />
+      <Route path="/forecasting" component={Forecasting} />
+      <Route path="/events" component={Events} />
+      <Route path="/tasks" component={Tasks} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/ai-chat" component={AIChat} />
       <Route component={NotFound} />
     </Switch>
   );
