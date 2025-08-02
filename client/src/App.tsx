@@ -17,32 +17,29 @@ import Analytics from "@/pages/analytics";
 import AIChat from "@/pages/ai-chat";
 
 function Router() {
-  const { user, isLoading } = useAuth();
-
-  // Redirect authenticated users away from auth page
-  if (user) {
-    return (
-      <Switch>
-        <Route path="/auth">
-          <Redirect to="/" />
-        </Route>
-        <ProtectedRoute path="/" component={Dashboard} />
-        <ProtectedRoute path="/hotels" component={Hotels} />
-        <ProtectedRoute path="/forecasting" component={Forecasting} />
-        <ProtectedRoute path="/events" component={Events} />
-        <ProtectedRoute path="/tasks" component={Tasks} />
-        <ProtectedRoute path="/analytics" component={Analytics} />
-        <ProtectedRoute path="/ai-chat" component={AIChat} />
-        <Route component={NotFound} />
-      </Switch>
-    );
-  }
-
   return (
     <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/">
-        <Redirect to="/auth" />
+        <ProtectedRoute component={Dashboard} />
+      </Route>
+      <Route path="/hotels">
+        <ProtectedRoute component={Hotels} />
+      </Route>
+      <Route path="/forecasting">
+        <ProtectedRoute component={Forecasting} />
+      </Route>
+      <Route path="/events">
+        <ProtectedRoute component={Events} />
+      </Route>
+      <Route path="/tasks">
+        <ProtectedRoute component={Tasks} />
+      </Route>
+      <Route path="/analytics">
+        <ProtectedRoute component={Analytics} />
+      </Route>
+      <Route path="/ai-chat">
+        <ProtectedRoute component={AIChat} />
       </Route>
       <Route component={NotFound} />
     </Switch>
