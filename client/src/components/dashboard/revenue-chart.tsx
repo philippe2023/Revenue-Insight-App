@@ -25,8 +25,8 @@ export default function RevenueChart() {
   }
 
   // Transform data for chart
-  const chartData = analytics?.map(item => ({
-    month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short' }),
+  const chartData = analytics?.monthly?.map(item => ({
+    month: item.month,
     revenue: item.revenue
   })) || [];
 

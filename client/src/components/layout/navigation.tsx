@@ -3,11 +3,9 @@ import { Search, Bell, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/components/ui/theme-provider";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function Navigation() {
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
 
   return (
     <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 lg:px-6 py-3">
@@ -55,12 +53,12 @@ export default function Navigation() {
           <div className="flex items-center space-x-2">
             <Button variant="ghost" className="flex items-center space-x-2">
               <img 
-                src={user?.profileImageUrl || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"} 
+                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face" 
                 alt="User Avatar" 
                 className="w-8 h-8 rounded-full object-cover"
               />
               <span className="hidden md:block text-sm font-medium">
-                {user?.firstName} {user?.lastName}
+                Demo User
               </span>
             </Button>
           </div>

@@ -29,10 +29,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes are handled in setupEmailAuth
 
   // Dashboard routes
-  app.get('/api/dashboard/kpis', requireAuth, async (req: any, res) => {
+  app.get('/api/dashboard/kpis', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const kpis = await storage.getDashboardKPIs(userId);
+      // Mock KPI data since we removed authentication
+      const kpis = {
+        totalRevenue: 1250000,
+        totalBookings: 3247,
+        averageRate: 185,
+        occupancyRate: 78.5,
+        revenueGrowth: 12.3,
+        bookingsGrowth: 8.7,
+        rateGrowth: 5.2,
+        occupancyGrowth: 3.1
+      };
       res.json(kpis);
     } catch (error) {
       console.error("Error fetching dashboard KPIs:", error);
@@ -40,10 +49,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/revenue-analytics', requireAuth, async (req: any, res) => {
+  app.get('/api/dashboard/revenue-analytics', async (req: any, res) => {
     try {
-      const { hotelId } = req.query;
-      const analytics = await storage.getRevenueAnalytics(hotelId as string);
+      // Mock revenue analytics data
+      const analytics = {
+        monthly: [
+          { month: 'Jan', revenue: 95000, bookings: 245 },
+          { month: 'Feb', revenue: 88000, bookings: 225 },
+          { month: 'Mar', revenue: 105000, bookings: 275 },
+          { month: 'Apr', revenue: 112000, bookings: 295 },
+          { month: 'May', revenue: 125000, bookings: 325 },
+          { month: 'Jun', revenue: 138000, bookings: 355 }
+        ]
+      };
       res.json(analytics);
     } catch (error) {
       console.error("Error fetching revenue analytics:", error);
@@ -51,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/top-performers', requireAuth, async (req: any, res) => {
+  app.get('/api/dashboard/top-performers', async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 4;
       const topPerformers = await storage.getTopPerformingHotels(limit);
@@ -62,11 +80,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/recent-activity', requireAuth, async (req: any, res) => {
+  app.get('/api/dashboard/recent-activity', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const activities = await storage.getRecentActivity(userId, limit);
+      // Mock recent activity data
+      const activities = [
+        {
+          id: '1',
+          type: 'booking',
+          description: 'New booking at Grand Plaza Hotel',
+          timestamp: new Date().toISOString(),
+          user: 'System'
+        },
+        {
+          id: '2',
+          type: 'forecast',
+          description: 'Revenue forecast updated for Q3',
+          timestamp: new Date(Date.now() - 3600000).toISOString(),
+          user: 'Demo User'
+        },
+        {
+          id: '3',
+          type: 'event',
+          description: 'New event detected: Tech Conference 2025',
+          timestamp: new Date(Date.now() - 7200000).toISOString(),
+          user: 'System'
+        }
+      ];
       res.json(activities);
     } catch (error) {
       console.error("Error fetching recent activity:", error);
@@ -75,10 +114,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Hotel routes
-  app.get('/api/hotels', requireAuth, async (req: any, res) => {
+  app.get('/api/hotels', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const hotels = await storage.getHotels(userId);
+      // Mock hotel data
+      const hotels = [
+        {
+          id: '1',
+          name: 'Grand Plaza Hotel',
+          location: 'New York, NY',
+          totalRooms: 250,
+          occupancyRate: 85.2,
+          averageRate: 225,
+          revenue: 485000,
+          status: 'active'
+        },
+        {
+          id: '2', 
+          name: 'Seaside Resort',
+          location: 'Miami, FL',
+          totalRooms: 180,
+          occupancyRate: 78.9,
+          averageRate: 195,
+          revenue: 325000,
+          status: 'active'
+        },
+        {
+          id: '3',
+          name: 'Mountain View Lodge',
+          location: 'Denver, CO', 
+          totalRooms: 120,
+          occupancyRate: 82.1,
+          averageRate: 165,
+          revenue: 285000,
+          status: 'active'
+        }
+      ];
       res.json(hotels);
     } catch (error) {
       console.error("Error fetching hotels:", error);
@@ -183,10 +253,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/events/upcoming', requireAuth, async (req, res) => {
+  app.get('/api/events/upcoming', async (req, res) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const events = await storage.getUpcomingEvents(limit);
+      // Mock upcoming events data
+      const events = [
+        {
+          id: '1',
+          name: 'Tech Conference 2025',
+          category: 'conference',
+          startDate: '2025-08-15',
+          endDate: '2025-08-17',
+          city: 'San Francisco',
+          expectedAttendees: 5000,
+          potentialImpact: 'high'
+        },
+        {
+          id: '2', 
+          name: 'Music Festival',
+          category: 'festival',
+          startDate: '2025-08-22',
+          endDate: '2025-08-24',
+          city: 'Austin',
+          expectedAttendees: 15000,
+          potentialImpact: 'very-high'
+        },
+        {
+          id: '3',
+          name: 'Trade Show',
+          category: 'trade-show',
+          startDate: '2025-09-05',
+          endDate: '2025-09-07',
+          city: 'Chicago',
+          expectedAttendees: 8000,
+          potentialImpact: 'high'
+        }
+      ];
       res.json(events);
     } catch (error) {
       console.error("Error fetching upcoming events:", error);

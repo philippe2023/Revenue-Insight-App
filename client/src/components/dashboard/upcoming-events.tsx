@@ -64,13 +64,13 @@ export default function UpcomingEvents() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {events?.length === 0 ? (
+          {!events || !Array.isArray(events) || events.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-3" />
               <p className="text-slate-500 dark:text-slate-400">No upcoming events</p>
             </div>
           ) : (
-            events?.map((event: any) => (
+            events.map((event: any) => (
               <div key={event.id} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 hover:shadow-sm transition-shadow">
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="font-medium text-slate-900 dark:text-white">{event.name}</h4>
