@@ -29,13 +29,13 @@ export default function AuthPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      const res = await apiRequest("POST", "/api/auth/login", data);
+      const res = await apiRequest("POST", "/api/login", data);
       return await res.json();
     },
     onSuccess: (user) => {
-      queryClient.setQueryData(["/api/auth/user"], user);
+      queryClient.setQueryData(["/api/user"], user);
       // Force a refetch to ensure state is synchronized
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.firstName || user.email}`,
@@ -54,11 +54,11 @@ export default function AuthPage() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
+      const res = await apiRequest("POST", "/api/register", data);
       return await res.json();
     },
     onSuccess: (user) => {
-      queryClient.setQueryData(["/api/auth/user"], user);
+      queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Account created!",
         description: `Welcome to HotelCast, ${user.firstName || user.email}`,
