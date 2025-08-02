@@ -57,7 +57,6 @@ export const hotels = pgTable("hotels", {
   totalRooms: integer("total_rooms"),
   imageUrl: varchar("image_url"),
   status: varchar("status").default("active"), // active, inactive, maintenance
-  ownerId: varchar("owner_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -149,7 +148,7 @@ export const comments = pgTable("comments", {
   content: text("content").notNull(),
   entityType: varchar("entity_type"), // hotel, event, forecast, task
   entityId: varchar("entity_id").notNull(),
-  parentId: varchar("parent_id").references(() => comments.id), // for threaded replies
+  parentId: varchar("parent_id"), // for threaded replies, self-reference added in relations
   authorId: varchar("author_id").references(() => users.id).notNull(),
   isResolved: boolean("is_resolved").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -182,11 +181,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   activities: many(activityLog),
 }));
 
-export const hotelsRelations = relations(hotels, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [hotels.ownerId],
-    references: [users.id],
-  }),
+export const hotelsRelations = relations(hotels, ({ many }) => ({
   assignments: many(hotelAssignments),
   forecasts: many(forecasts),
   actuals: many(hotelActuals),
@@ -312,7 +307,6 @@ export type Hotel = typeof hotels.$inferSelect;
 export type InsertHotel = typeof hotels.$inferInsert;
 export const insertHotelSchema = createInsertSchema(hotels).omit({
   id: true,
-  ownerId: true,
   createdAt: true,
   updatedAt: true,
 });

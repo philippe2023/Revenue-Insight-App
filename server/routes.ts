@@ -312,19 +312,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/events', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const validatedData = insertEventSchema.parse({ ...req.body, createdBy: userId });
+      const validatedData = insertEventSchema.parse(req.body);
       const event = await storage.createEvent(validatedData);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'create',
-        entityType: 'event',
-        entityId: event.id,
-        metadata: { eventName: event.name },
-      });
-
       res.status(201).json(event);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -332,6 +321,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error creating event:", error);
       res.status(500).json({ message: "Failed to create event" });
+    }
+  });
+
+  // External event search route with real functionality
+  app.post('/api/events/external-search', async (req: any, res) => {
+    try {
+      const { location, eventTypes, startDate, endDate, searchName } = req.body;
+      
+      if (!location || !startDate || !endDate) {
+        return res.status(400).json({ message: "Location, start date, and end date are required" });
+      }
+
+      // Import event finder service dynamically
+      const { eventFinderService } = await import('./event-finder');
+      
+      const searchParams = {
+        location,
+        eventTypes: eventTypes || ['all'],
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        searchName
+      };
+
+      const foundEvents = await eventFinderService.searchEvents(searchParams);
+      
+      const searchResult = {
+        searchParams,
+        events: foundEvents,
+        resultsCount: foundEvents.length,
+        timestamp: new Date().toISOString()
+      };
+
+      res.json(searchResult);
+    } catch (error) {
+      console.error("Error searching external events:", error);
+      res.status(500).json({ message: "Failed to search external events" });
     }
   });
 
@@ -596,29 +621,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Chat route (placeholder for integration)
-  app.post('/api/ai-chat', requireAuth, async (req: any, res) => {
+  // AI Chat route with real functionality
+  app.post('/api/ai-chat', async (req: any, res) => {
     try {
       const { message } = req.body;
-      const userId = req.user.id;
       
-      // This is a placeholder for AI integration
-      // In a real implementation, you would integrate with OpenAI or similar service
-      const response = {
-        message: `I received your query: "${message}". This is a placeholder response. In a real implementation, I would analyze your hotel data and provide insights.`,
-        timestamp: new Date().toISOString(),
-      };
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'ai_query',
-        entityType: 'ai_chat',
-        entityId: 'chat_session',
-        metadata: { query: message },
-      });
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Message is required" });
+      }
 
-      res.json(response);
+      // Import AI chat service dynamically to avoid circular dependencies
+      const { hotelChatAssistant } = await import('./ai-chat');
+      
+      const startTime = Date.now();
+      const response = await hotelChatAssistant.processMessage(message);
+      const processingTime = Date.now() - startTime;
+      
+      const chatResponse = {
+        message: response,
+        timestamp: new Date().toISOString(),
+        processingTime: processingTime
+      };
+
+      res.json(chatResponse);
     } catch (error) {
       console.error("Error processing AI chat:", error);
       res.status(500).json({ message: "Failed to process AI chat" });

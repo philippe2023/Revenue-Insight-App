@@ -1,0 +1,832 @@
+{% extends "base.html" %}
+
+{% block title %}Actuals Dashboard - Hotel Revenue Forecasting{% endblock %}
+
+{% block extra_head %}
+<style>
+.actuals-hero {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 60px 0;
+    margin-top: -24px;
+    border-radius: 0 0 40px 40px;
+}
+
+[data-bs-theme="dark"] .actuals-hero {
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.3) 0%, rgba(52, 152, 219, 0.1) 100%);
+}
+
+.nav-tabs .nav-link {
+    border-radius: 15px 15px 0 0;
+    border: none;
+    padding: 15px 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--bs-body-color);
+    margin-right: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    background: rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.tab-content {
+    border: none;
+    border-radius: 0 20px 20px 20px;
+    background: var(--bs-body-bg);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.filter-card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+.btn-custom {
+    border-radius: 50px;
+    padding: 12px 25px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.form-control, .form-select {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    margin: 0 auto 20px;
+}
+
+.breadcrumb-custom {
+    background: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+    content: "→";
+    color: #667eea;
+    font-weight: bold;
+}
+
+.table-modern {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.table-modern th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="actuals-hero">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-custom">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item active">Actuals Dashboard</li>
+            </ol>
+        </nav>
+        
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="icon-circle mx-auto mb-3 d-lg-none"></div>
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-chart-bar me-3 d-none d-lg-inline"></i>
+                    Actuals Dashboard
+                </h1>
+                <p class="lead text-muted">
+                    Comprehensive analysis of hotel performance data with advanced filtering and comparison tools
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="d-grid d-lg-block">
+                    <div class="btn-group">
+                        <a href="{{ url_for('upload_actuals') }}" class="btn btn-success btn-custom">
+                            <i class="fas fa-upload me-2"></i>Upload Data
+                        </a>
+                        <a href="{{ url_for('download_template') }}" class="btn btn-outline-light btn-custom">
+                            <i class="fas fa-download me-2"></i>Template
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filter Section -->
+<div class="container">
+    <div class="card filter-card">
+        <div class="card-body">
+            <h5 class="card-title mb-4">
+                <i class="fas fa-filter me-2 text-primary"></i>Analysis Filters
+            </h5>
+            
+            <!-- Hotel Code Button Filters -->
+            <div class="mb-4">
+                <h6 class="text-muted mb-3">Quick Filter by Hotel:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/actuals-dashboard?date_from={{ current_filters.date_from }}&date_to={{ current_filters.date_to }}&event={{ current_filters.event }}" 
+                       class="btn btn-sm {% if not current_filters.hotel %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        All Hotels
+                    </a>
+                    {% for hotel in all_hotels %}
+                    <a href="/actuals-dashboard?hotel={{ hotel.hotel_code }}&date_from={{ current_filters.date_from }}&date_to={{ current_filters.date_to }}&event={{ current_filters.event }}" 
+                       class="btn btn-sm {% if current_filters.hotel == hotel.hotel_code %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                        {{ hotel.hotel_code }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card filter-card">
+        <div class="card-body">
+            <h6 class="text-muted mb-3">Advanced Filters:</h6>
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="hotel" class="form-label">Hotel Search</label>
+                <input type="search" 
+                       class="form-control" 
+                       id="hotel" 
+                       name="hotel" 
+                       value="{{ current_filters.hotel }}"
+                       placeholder="Search by hotel code or name...">
+            </div>
+            <div class="col-md-3">
+                <label for="event" class="form-label">Event Analysis</label>
+                <select class="form-select" id="event" name="event">
+                    <option value="">Select event to analyze...</option>
+                    {% for event in all_events %}
+                    <option value="{{ event.id }}" {% if current_filters.event == event.id|string %}selected{% endif %}>
+                        {{ event.event_name }} ({{ event.start_date.strftime('%m/%d') }} - {{ event.end_date.strftime('%m/%d') }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">Select an event to compare actuals vs forecasts</div>
+            </div>
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">Date From</label>
+                <input type="date" 
+                       class="form-control" 
+                       id="date_from" 
+                       name="date_from" 
+                       value="{{ current_filters.date_from }}"
+                       {% if current_filters.event %}disabled{% endif %}>
+            </div>
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">Date To</label>
+                <input type="date" 
+                       class="form-control" 
+                       id="date_to" 
+                       name="date_to" 
+                       value="{{ current_filters.date_to }}"
+                       {% if current_filters.event %}disabled{% endif %}>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="d-grid w-100">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>
+                        Analyze
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% if selected_event %}
+        <div class="mt-3">
+            <div class="alert alert-info">
+                <i class="fas fa-calendar me-2"></i>
+                <strong>Event Analysis:</strong> {{ selected_event.event_name }} 
+                ({{ selected_event.start_date.strftime('%Y-%m-%d') }} to {{ selected_event.end_date.strftime('%Y-%m-%d') }})
+                in {{ selected_event.city }}
+                <a href="?hotel={{ current_filters.hotel }}" class="btn btn-sm btn-outline-secondary ms-2">
+                    <i class="fas fa-times me-1"></i>Clear Event Filter
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Custom Analytics Charts Section -->
+{% if actuals_data %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2 text-primary"></i>
+                    Performance Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Revenue Trends Chart -->
+                <div class="mb-5">
+                    <h6 class="mb-3">
+                        <i class="fas fa-dollar-sign me-2 text-success"></i>Revenue Trends
+                    </h6>
+                    <div class="chart-container" style="height: 300px; position: relative;">
+                        {% set max_revenue = actual_revenue_data|map(attribute=1)|max if actual_revenue_data else 100000 %}
+                        <div class="chart-bars d-flex align-items-end justify-content-between h-100 px-3" style="background: linear-gradient(to top, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 100% 25%, 12.5% 100%;">
+                            {% for date, actual_rev, baseline_rev in actual_revenue_data[:15] %}
+                            <div class="chart-bar-group d-flex align-items-end" style="width: 6%; height: 100%;">
+                                <!-- Actual Revenue Bar -->
+                                <div class="chart-bar me-1" 
+                                     style="width: 50%; 
+                                            height: {{ (actual_rev / max_revenue * 85) if actual_rev else 0 }}%; 
+                                            background: linear-gradient(to top, #28a745, #20c997); 
+                                            border-radius: 3px 3px 0 0;
+                                            position: relative;"
+                                     title="Actual: ${{ "{:,.0f}".format(actual_rev) if actual_rev else '0' }}">
+                                </div>
+                                <!-- Baseline Revenue Bar -->
+                                <div class="chart-bar" 
+                                     style="width: 50%; 
+                                            height: {{ (baseline_rev / max_revenue * 85) if baseline_rev else 0 }}%; 
+                                            background: linear-gradient(to top, #6c757d, #adb5bd); 
+                                            border-radius: 3px 3px 0 0;
+                                            position: relative;"
+                                     title="Baseline: ${{ "{:,.0f}".format(baseline_rev) if baseline_rev else '0' }}">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Chart Labels -->
+                        <div class="chart-labels d-flex justify-content-between mt-2 px-3">
+                            {% for date, actual_rev, baseline_rev in actual_revenue_data[:15] %}
+                            <span class="text-muted small" style="width: 6%; font-size: 0.75rem;">{{ date.strftime('%m/%d') }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mt-2 d-flex gap-3">
+                        <span class="badge" style="background: linear-gradient(to right, #28a745, #20c997);">Actual Revenue</span>
+                        <span class="badge" style="background: linear-gradient(to right, #6c757d, #adb5bd);">Baseline (STLY)</span>
+                    </div>
+                </div>
+
+                <!-- ADR & Occupancy Chart -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">
+                            <i class="fas fa-bed me-2 text-primary"></i>Average Daily Rate (ADR)
+                        </h6>
+                        <div class="chart-container" style="height: 250px; position: relative;">
+                            {% set max_adr = actual_adr_data|map(attribute=1)|max if actual_adr_data else 300 %}
+                            <div class="chart-bars d-flex align-items-end justify-content-between h-100 px-2">
+                                {% for date, actual_adr, baseline_adr in actual_adr_data[:10] %}
+                                <div class="chart-bar-group d-flex align-items-end" style="width: 9%; height: 100%;">
+                                    <div class="chart-bar me-1" 
+                                         style="width: 50%; 
+                                                height: {{ (actual_adr / max_adr * 85) if actual_adr else 0 }}%; 
+                                                background: linear-gradient(to top, #007bff, #0056b3); 
+                                                border-radius: 2px 2px 0 0;"
+                                         title="Actual ADR: ${{ "{:,.0f}".format(actual_adr) if actual_adr else '0' }}">
+                                    </div>
+                                    <div class="chart-bar" 
+                                         style="width: 50%; 
+                                                height: {{ (baseline_adr / max_adr * 85) if baseline_adr else 0 }}%; 
+                                                background: linear-gradient(to top, #6c757d, #adb5bd); 
+                                                border-radius: 2px 2px 0 0;"
+                                         title="Baseline ADR: ${{ "{:,.0f}".format(baseline_adr) if baseline_adr else '0' }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mt-2 d-flex gap-2">
+                            <span class="badge bg-primary">Actual ADR</span>
+                            <span class="badge bg-secondary">Baseline ADR</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="mb-3">
+                            <i class="fas fa-percentage me-2 text-warning"></i>Occupancy Rate
+                        </h6>
+                        <div class="chart-container" style="height: 250px; position: relative;">
+                            <div class="chart-bars d-flex align-items-end justify-content-between h-100 px-2">
+                                {% for date, actual_occ, baseline_occ in actual_occupancy_data[:10] %}
+                                <div class="chart-bar-group d-flex align-items-end" style="width: 9%; height: 100%;">
+                                    <div class="chart-bar me-1" 
+                                         style="width: 50%; 
+                                                height: {{ actual_occ if actual_occ else 0 }}%; 
+                                                background: linear-gradient(to top, #ffc107, #ff8f00); 
+                                                border-radius: 2px 2px 0 0;"
+                                         title="Actual Occupancy: {{ "{:,.1f}".format(actual_occ) if actual_occ else '0' }}%">
+                                    </div>
+                                    <div class="chart-bar" 
+                                         style="width: 50%; 
+                                                height: {{ baseline_occ if baseline_occ else 0 }}%; 
+                                                background: linear-gradient(to top, #6c757d, #adb5bd); 
+                                                border-radius: 2px 2px 0 0;"
+                                         title="Baseline Occupancy: {{ "{:,.1f}".format(baseline_occ) if baseline_occ else '0' }}%">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mt-2 d-flex gap-2">
+                            <span class="badge bg-warning">Actual Occupancy</span>
+                            <span class="badge bg-secondary">Baseline Occupancy</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if actuals_data %}
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-database fa-2x text-primary"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Total Records</p>
+                    <h4 class="mb-0">{{ total_records }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-building fa-2x text-success"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Hotels</p>
+                    <h4 class="mb-0">{{ actuals_data|map(attribute='1')|unique|list|length }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-calendar fa-2x text-info"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Date Range</p>
+                    <small class="mb-0">
+                        {% if actuals_data %}
+                            {{ actuals_data[-1][0].date.strftime('%Y-%m-%d') }} to {{ actuals_data[0][0].date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-chart-line fa-2x text-warning"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Showing</p>
+                    <h4 class="mb-0">{{ actuals_data|length }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Tabs -->
+<div class="row">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="analysisTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="actual-tab" data-bs-toggle="tab" data-bs-target="#actual-pane" type="button" role="tab">
+                    <i class="fas fa-chart-line me-2"></i>Actual Performance
+                    <span class="badge bg-success ms-1">{{ actual_table_data|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="baseline-tab" data-bs-toggle="tab" data-bs-target="#baseline-pane" type="button" role="tab">
+                    <i class="fas fa-chart-area me-2"></i>Baseline (STLY)
+                    <span class="badge bg-info ms-1">{{ baseline_table_data|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="impact-tab" data-bs-toggle="tab" data-bs-target="#impact-pane" type="button" role="tab">
+                    <i class="fas fa-exchange-alt me-2"></i>Impact Analysis
+                    <span class="badge bg-warning ms-1">{{ impact_table_data|length }}</span>
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="analysisTabContent">
+            <!-- Actual Performance Tab -->
+            <div class="tab-pane fade show active" id="actual-pane" role="tabpanel">
+                {% if actual_table_data %}
+                <div class="card border-0 rounded-0">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Actual Performance Data
+                            {% if selected_event %}
+                            vs Forecast Targets
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Hotel</th>
+                                        <th>Revenue TY</th>
+                                        <th>Room Nights TY</th>
+                                        <th>ADR TY</th>
+                                        <th>Occupancy %</th>
+                                        {% if selected_event %}
+                                        <th>Forecast Rev</th>
+                                        <th>Forecast ADR</th>
+                                        <th>Forecast Occ</th>
+                                        <th>vs Target</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in actual_table_data %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                {{ row.date.strftime('%Y-%m-%d') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('hotel_detail', hotel_id=row.hotel.id) }}" class="text-decoration-none">
+                                                <strong class="text-primary">{{ row.hotel.hotel_code }}</strong>
+                                                <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                                            </a><br>
+                                            <small class="text-muted">{{ row.hotel.hotel_name[:25] }}{% if row.hotel.hotel_name|length > 25 %}...{% endif %}</small>
+                                        </td>
+                                        <td>
+                                            {% if row.revenue %}
+                                                <strong class="text-success">${{ "{:,.0f}".format(row.revenue) }}</strong>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.room_nights %}
+                                                {{ row.room_nights }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.adr %}
+                                                ${{ "{:.2f}".format(row.adr) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.occupancy %}
+                                                <span class="badge bg-{% if row.occupancy >= 80 %}success{% elif row.occupancy >= 60 %}warning{% else %}danger{% endif %}">
+                                                    {{ "{:.1f}".format(row.occupancy) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        {% if selected_event %}
+                                        <td>
+                                            {% if row.forecast.revenue %}
+                                                ${{ "{:,.0f}".format(row.forecast.revenue) }}
+                                            {% else %}
+                                                <span class="text-muted">No target</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.forecast.adr %}
+                                                ${{ "{:.2f}".format(row.forecast.adr) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.forecast.occupancy %}
+                                                {{ "{:.1f}".format(row.forecast.occupancy) }}%
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.revenue and row.forecast.revenue %}
+                                                {% set variance = ((row.revenue / row.forecast.revenue - 1) * 100) %}
+                                                <span class="badge bg-{% if variance > 5 %}success{% elif variance > -5 %}warning{% else %}danger{% endif %}">
+                                                    {{ "{:+.1f}".format(variance) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center m-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No actual performance data available for the selected filters.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Baseline Performance Tab -->
+            <div class="tab-pane fade" id="baseline-pane" role="tabpanel">
+                {% if baseline_table_data %}
+                <div class="card border-0 rounded-0">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-area me-2"></i>
+                            Baseline Performance (Same Time Last Year)
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-info">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Hotel</th>
+                                        <th>Revenue STLY</th>
+                                        <th>Room Nights STLY</th>
+                                        <th>ADR STLY</th>
+                                        <th>Occupancy %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in baseline_table_data %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                {{ row.date.strftime('%Y-%m-%d') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('hotel_detail', hotel_id=row.hotel.id) }}" class="text-decoration-none">
+                                                <strong class="text-primary">{{ row.hotel.hotel_code }}</strong>
+                                                <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                                            </a><br>
+                                            <small class="text-muted">{{ row.hotel.hotel_name[:25] }}{% if row.hotel.hotel_name|length > 25 %}...{% endif %}</small>
+                                        </td>
+                                        <td>
+                                            {% if row.revenue %}
+                                                <strong class="text-info">${{ "{:,.0f}".format(row.revenue) }}</strong>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.room_nights %}
+                                                {{ row.room_nights }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.adr %}
+                                                ${{ "{:.2f}".format(row.adr) }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.occupancy %}
+                                                <span class="badge bg-secondary">
+                                                    {{ "{:.1f}".format(row.occupancy) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center m-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No baseline (STLY) data available for the selected filters.
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Impact Analysis Tab -->
+            <div class="tab-pane fade" id="impact-pane" role="tabpanel">
+                {% if impact_table_data %}
+                <div class="card border-0 rounded-0">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exchange-alt me-2"></i>
+                            Impact Analysis (Actual vs Baseline)
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-warning">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Hotel</th>
+                                        <th>Revenue Impact</th>
+                                        <th>ADR Impact</th>
+                                        <th>Room Nights Impact</th>
+                                        <th>Occupancy Impact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in impact_table_data %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-light text-dark">
+                                                {{ row.date.strftime('%Y-%m-%d') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('hotel_detail', hotel_id=row.hotel.id) }}" class="text-decoration-none">
+                                                <strong class="text-primary">{{ row.hotel.hotel_code }}</strong>
+                                                <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                                            </a><br>
+                                            <small class="text-muted">{{ row.hotel.hotel_name[:25] }}{% if row.hotel.hotel_name|length > 25 %}...{% endif %}</small>
+                                        </td>
+                                        <td>
+                                            {% if row.revenue_impact %}
+                                                <span class="badge bg-{% if row.revenue_impact > 0 %}success{% elif row.revenue_impact < 0 %}danger{% else %}secondary{% endif %} fs-6">
+                                                    {% if row.revenue_impact > 0 %}+{% endif %}${{ "{:,.0f}".format(row.revenue_impact) }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.adr_impact %}
+                                                <span class="badge bg-{% if row.adr_impact > 0 %}success{% elif row.adr_impact < 0 %}danger{% else %}secondary{% endif %}">
+                                                    {% if row.adr_impact > 0 %}+{% endif %}{{"%.2f"|format(row.adr_impact)}}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.room_nights_impact %}
+                                                <span class="badge bg-{% if row.room_nights_impact > 0 %}success{% elif row.room_nights_impact < 0 %}danger{% else %}secondary{% endif %}">
+                                                    {% if row.room_nights_impact > 0 %}+{% endif %}{{ row.room_nights_impact }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.occupancy_impact %}
+                                                <span class="badge bg-{% if row.occupancy_impact > 0 %}success{% elif row.occupancy_impact < 0 %}danger{% else %}secondary{% endif %}">
+                                                    {% if row.occupancy_impact > 0 %}+{% endif %}{{"%.1f"|format(row.occupancy_impact)}}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center m-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No impact analysis data available. Both actual and baseline data are needed for comparison.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if actuals_data|length >= 500 %}
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle me-2"></i>
+    Showing first 500 records. Use filters to narrow down results.
+</div>
+{% endif %}
+
+{% else %}
+<!-- No Data State -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-chart-bar fa-4x text-muted mb-4"></i>
+        <h4>No Actuals Data Found</h4>
+        {% if current_filters.hotel or current_filters.date_from or current_filters.date_to %}
+        <p class="text-muted mb-4">
+            No data matches your current filters. Try adjusting your search criteria.
+        </p>
+        <a href="{{ url_for('actuals_dashboard') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-times me-2"></i>
+            Clear Filters
+        </a>
+        {% else %}
+        <p class="text-muted mb-4">
+            Get started by uploading your hotel actuals data using our Excel template.
+        </p>
+        {% endif %}
+        <a href="{{ url_for('upload_actuals') }}" class="btn btn-primary">
+            <i class="fas fa-upload me-2"></i>
+            Upload Actuals Data
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Disable date inputs when event is selected
+document.getElementById('event').addEventListener('change', function() {
+    const dateInputs = document.querySelectorAll('#date_from, #date_to');
+    const isEventSelected = this.value !== '';
+    
+    dateInputs.forEach(input => {
+        input.disabled = isEventSelected;
+        if (isEventSelected) {
+            input.value = '';
+        }
+    });
+});
+
+// Custom charts are now rendered with HTML/CSS - no JavaScript needed
+console.log('Actuals dashboard loaded with custom HTML/CSS charts');
+
+</script>
+{% endblock %}

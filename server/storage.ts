@@ -107,6 +107,13 @@ export interface IStorage {
     upcomingEvents: number;
   }>;
   getRevenueAnalytics(hotelId?: string): Promise<Array<{ month: string; revenue: number }>>;
+
+  // AI Chat support methods
+  getAllHotels(): Promise<Hotel[]>;
+  getAllEvents(): Promise<Event[]>;
+  getAllForecasts(): Promise<Forecast[]>;
+  getAllHotelActuals(): Promise<HotelActual[]>;
+  getAllTasks(): Promise<Task[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -138,18 +145,8 @@ export class DatabaseStorage implements IStorage {
 
   // Hotel operations
   async getHotels(userId: string): Promise<Hotel[]> {
-    const userHotels = await db
-      .select({ hotel: hotels })
-      .from(hotels)
-      .leftJoin(hotelAssignments, eq(hotels.id, hotelAssignments.hotelId))
-      .where(
-        or(
-          eq(hotels.ownerId, userId),
-          eq(hotelAssignments.userId, userId)
-        )
-      );
-    
-    return userHotels.map(row => row.hotel);
+    // Since we removed authentication, return all hotels
+    return await db.select().from(hotels);
   }
 
   async getHotel(id: string): Promise<Hotel | undefined> {
@@ -582,6 +579,27 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`TO_CHAR(${hotelActuals.actualDate}, 'YYYY-MM')`);
 
     return results;
+  }
+
+  // AI Chat support methods
+  async getAllHotels(): Promise<Hotel[]> {
+    return await db.select().from(hotels);
+  }
+
+  async getAllEvents(): Promise<Event[]> {
+    return await db.select().from(events);
+  }
+
+  async getAllForecasts(): Promise<Forecast[]> {
+    return await db.select().from(forecasts);
+  }
+
+  async getAllHotelActuals(): Promise<HotelActual[]> {
+    return await db.select().from(hotelActuals);
+  }
+
+  async getAllTasks(): Promise<Task[]> {
+    return await db.select().from(tasks);
   }
 }
 
