@@ -312,6 +312,7 @@ export type Hotel = typeof hotels.$inferSelect;
 export type InsertHotel = typeof hotels.$inferInsert;
 export const insertHotelSchema = createInsertSchema(hotels).omit({
   id: true,
+  ownerId: true,
   createdAt: true,
   updatedAt: true,
 });

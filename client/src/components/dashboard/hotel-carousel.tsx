@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Plus, Filter } from "lucide-react";
 import { useRef } from "react";
+import { useLocation } from "wouter";
 
 export default function HotelCarousel() {
   const { data: hotels, isLoading } = useQuery({
@@ -13,6 +14,7 @@ export default function HotelCarousel() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [, setLocation] = useLocation();
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -57,7 +59,7 @@ export default function HotelCarousel() {
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => setLocation("/hotels")}>
               <Plus className="w-4 h-4 mr-2" />
               Add Hotel
             </Button>
@@ -108,7 +110,10 @@ export default function HotelCarousel() {
             ))}
             
             {/* Add New Hotel Card */}
-            <div className="flex-shrink-0 w-72 bg-slate-50 dark:bg-slate-700/50 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors">
+            <div 
+              className="flex-shrink-0 w-72 bg-slate-50 dark:bg-slate-700/50 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors"
+              onClick={() => setLocation("/hotels")}
+            >
               <div className="text-center">
                 <Plus className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-slate-600 dark:text-slate-400 font-medium">Add New Hotel</p>
