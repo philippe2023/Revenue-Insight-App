@@ -17,30 +17,31 @@ import Analytics from "@/pages/analytics";
 import AIChat from "@/pages/ai-chat";
 
 function Router() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/">
-        <ProtectedRoute component={Dashboard} />
+      <Route path="/auth">
+        {user ? <Redirect to="/" /> : <AuthPage />}
       </Route>
-      <Route path="/hotels">
-        <ProtectedRoute component={Hotels} />
-      </Route>
-      <Route path="/forecasting">
-        <ProtectedRoute component={Forecasting} />
-      </Route>
-      <Route path="/events">
-        <ProtectedRoute component={Events} />
-      </Route>
-      <Route path="/tasks">
-        <ProtectedRoute component={Tasks} />
-      </Route>
-      <Route path="/analytics">
-        <ProtectedRoute component={Analytics} />
-      </Route>
-      <Route path="/ai-chat">
-        <ProtectedRoute component={AIChat} />
-      </Route>
+      <Route path="/" component={() => user ? <Dashboard /> : <Redirect to="/auth" />} />
+      <Route path="/hotels" component={() => user ? <Hotels /> : <Redirect to="/auth" />} />
+      <Route path="/forecasting" component={() => user ? <Forecasting /> : <Redirect to="/auth" />} />
+      <Route path="/events" component={() => user ? <Events /> : <Redirect to="/auth" />} />
+      <Route path="/tasks" component={() => user ? <Tasks /> : <Redirect to="/auth" />} />
+      <Route path="/analytics" component={() => user ? <Analytics /> : <Redirect to="/auth" />} />
+      <Route path="/ai-chat" component={() => user ? <AIChat /> : <Redirect to="/auth" />} />
       <Route component={NotFound} />
     </Switch>
   );

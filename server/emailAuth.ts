@@ -59,7 +59,9 @@ export function setupEmailAuth(app: Express) {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax',
     },
+    name: 'hotelcast.sid',
   };
 
   app.set("trust proxy", 1);
