@@ -14,9 +14,9 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table - required for Replit Auth
-export const sessions = pgTable(
-  "sessions",
+// Session storage table - for email authentication only
+export const session = pgTable(
+  "session",
   {
     sid: varchar("sid").primaryKey(),
     sess: jsonb("sess").notNull(),
@@ -25,17 +25,17 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table - supports both Replit Auth and email/password
+// User table - email/password authentication only
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique().notNull(),
-  password: varchar("password"), // for email/password auth, null for OAuth
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+  password: varchar("password").notNull(), // required for email auth
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
   location: varchar("location"), // city, state/country
   role: varchar("role").default("user"), // user, admin, manager
-  authProvider: varchar("auth_provider").default("email"), // email, replit
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -283,7 +283,6 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
 }));
 
 // Schema types
-export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export const insertUserSchema = createInsertSchema(users).omit({

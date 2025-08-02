@@ -1,8 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupEmailAuth, requireAuth } from "./emailAuth";
-// import { setupAuth } from "./replitAuth"; // Disabled - using email auth only
+import { setupAuth, requireAuth } from "./auth";
 import {
   insertHotelSchema,
   insertEventSchema,
@@ -15,7 +14,7 @@ import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  setupEmailAuth(app);
+  setupAuth(app);
 
   // Auth routes are handled in setupEmailAuth
 

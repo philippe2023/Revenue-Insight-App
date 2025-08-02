@@ -32,11 +32,11 @@ import { db } from "./db";
 import { eq, desc, and, or, like, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations - required for Replit Auth and email/password auth
+  // User operations - email/password auth only
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  updateUserLastLogin(id: string): Promise<void>;
 
   // Hotel operations
   getHotels(userId: string): Promise<Hotel[]>;
@@ -126,19 +126,14 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
+  async updateUserLastLogin(id: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ 
+        lastLoginAt: new Date(),
+        updatedAt: new Date(),
       })
-      .returning();
-    return user;
+      .where(eq(users.id, id));
   }
 
   // Hotel operations
