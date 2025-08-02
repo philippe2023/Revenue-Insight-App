@@ -66,7 +66,8 @@ async function upsertUser(
   });
 }
 
-export async function setupAuth(app: Express) {
+// DISABLED: This conflicts with email auth
+export async function setupAuth_DISABLED(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
@@ -101,30 +102,33 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  app.get("/api/login", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
-  });
+  // Disabled - using email auth instead
+  // app.get("/api/login", (req, res, next) => {
+  //   passport.authenticate(`replitauth:${req.hostname}`, {
+  //     prompt: "login consent",
+  //     scope: ["openid", "email", "profile", "offline_access"],
+  //   })(req, res, next);
+  // });
 
-  app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
-    })(req, res, next);
-  });
+  // Disabled - using email auth instead
+  // app.get("/api/callback", (req, res, next) => {
+  //   passport.authenticate(`replitauth:${req.hostname}`, {
+  //     successReturnToOrRedirect: "/",
+  //     failureRedirect: "/api/login",
+  //   })(req, res, next);
+  // });
 
-  app.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
-    });
-  });
+  // Disabled - using email auth instead
+  // app.get("/api/logout", (req, res) => {
+  //   req.logout(() => {
+  //     res.redirect(
+  //       client.buildEndSessionUrl(config, {
+  //         client_id: process.env.REPL_ID!,
+  //         post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+  //       }).href
+  //     );
+  //   });
+  // });
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {

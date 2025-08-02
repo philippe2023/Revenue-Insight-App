@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupEmailAuth, requireAuth } from "./emailAuth";
+// import { setupAuth } from "./replitAuth"; // Disabled - using email auth only
 import {
   insertHotelSchema,
   insertEventSchema,
