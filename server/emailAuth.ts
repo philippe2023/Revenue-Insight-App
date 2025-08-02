@@ -46,7 +46,7 @@ export function setupEmailAuth(app: Express) {
   const PostgresSessionStore = connectPg(session);
   const sessionStore = new PostgresSessionStore({ 
     pool, 
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     tableName: 'session'
   });
 
