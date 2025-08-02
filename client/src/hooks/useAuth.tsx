@@ -30,10 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
-    staleTime: 0, // Always fresh
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
-    refetchInterval: false, // Don't auto-refetch, rely on manual invalidation
+    refetchInterval: false,
   });
 
   const loginMutation = useMutation({
@@ -41,22 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: async (user: User) => {
-      // Set the user data immediately
+    onSuccess: (user: User) => {
+      // Set the user data immediately and cache it
       queryClient.setQueryData(["/api/user"], user);
-      
-      // Force refresh the user query to ensure session is properly established
-      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.firstName || user.email}`,
       });
       
-      // Navigate after ensuring session is established
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      // Force navigation to trigger router update
+      window.location.href = '/';
     },
     onError: (error: Error) => {
       toast({
