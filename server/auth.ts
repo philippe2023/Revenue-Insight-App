@@ -45,12 +45,14 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Always false for development
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax',
+      domain: undefined, // Let browser handle domain
     },
     name: 'hotelcast.sid',
+    rolling: true, // Extend session on activity
   };
 
   app.set("trust proxy", 1);

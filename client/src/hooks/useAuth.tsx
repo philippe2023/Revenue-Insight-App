@@ -41,19 +41,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: User) => {
+    onSuccess: async (user: User) => {
       // Set the user data immediately
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Force refresh the user query to ensure session is properly established
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.firstName || user.email}`,
       });
       
-      // Add a small delay to ensure state is fully updated before navigation
+      // Navigate after ensuring session is established
       setTimeout(() => {
-        window.location.href = '/';
-      }, 100);
+        window.location.reload();
+      }, 300);
     },
     onError: (error: Error) => {
       toast({

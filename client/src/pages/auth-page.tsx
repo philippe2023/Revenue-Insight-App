@@ -32,16 +32,16 @@ export default function AuthPage() {
       const res = await apiRequest("POST", "/api/login", data);
       return await res.json();
     },
-    onSuccess: (user) => {
+    onSuccess: async (user) => {
       queryClient.setQueryData(["/api/user"], user);
       // Force a refetch to ensure state is synchronized
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.firstName || user.email}`,
       });
-      // Small delay to ensure query update completes
-      setTimeout(() => setLocation("/"), 100);
+      // Reload page to ensure clean state
+      window.location.reload();
     },
     onError: (error: any) => {
       toast({
