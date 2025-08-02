@@ -1,6 +1,6 @@
 import {
   users,
-  hotels,
+  hotels,  
   events,
   forecasts,
   hotelActuals,
@@ -10,6 +10,7 @@ import {
   activityLog,
   type User,
   type UpsertUser,
+  type InsertUser,
   type Hotel,
   type InsertHotel,
   type Event,
@@ -31,8 +32,10 @@ import { db } from "./db";
 import { eq, desc, and, or, like, gte, lte, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations - required for Replit Auth
+  // User operations - required for Replit Auth and email/password auth
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
 
   // Hotel operations
@@ -110,6 +113,16 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(userData).returning();
     return user;
   }
 

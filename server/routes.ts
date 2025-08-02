@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupEmailAuth, requireAuth } from "./emailAuth";
 import {
   insertHotelSchema,
   insertEventSchema,
@@ -14,24 +14,14 @@ import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  setupEmailAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Auth routes are handled in setupEmailAuth
 
   // Dashboard routes
-  app.get('/api/dashboard/kpis', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/kpis', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const kpis = await storage.getDashboardKPIs(userId);
       res.json(kpis);
     } catch (error) {
@@ -40,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/revenue-analytics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/revenue-analytics', requireAuth, async (req: any, res) => {
     try {
       const { hotelId } = req.query;
       const analytics = await storage.getRevenueAnalytics(hotelId as string);
@@ -51,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/top-performers', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/top-performers', requireAuth, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 4;
       const topPerformers = await storage.getTopPerformingHotels(limit);
@@ -62,9 +52,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/recent-activity', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/recent-activity', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const limit = parseInt(req.query.limit as string) || 10;
       const activities = await storage.getRecentActivity(userId, limit);
       res.json(activities);
@@ -75,9 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Hotel routes
-  app.get('/api/hotels', isAuthenticated, async (req: any, res) => {
+  app.get('/api/hotels', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const hotels = await storage.getHotels(userId);
       res.json(hotels);
     } catch (error) {
@@ -86,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/hotels/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/hotels/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const hotel = await storage.getHotel(id);
@@ -100,9 +90,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/hotels', isAuthenticated, async (req: any, res) => {
+  app.post('/api/hotels', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertHotelSchema.parse({ ...req.body, ownerId: userId });
       const hotel = await storage.createHotel(validatedData);
       
@@ -125,10 +115,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/hotels/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/hotels/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertHotelSchema.partial().parse(req.body);
       const hotel = await storage.updateHotel(id, validatedData);
       
@@ -151,10 +141,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/hotels/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/hotels/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       await storage.deleteHotel(id);
       
       // Log activity
@@ -173,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Event routes
-  app.get('/api/events', isAuthenticated, async (req, res) => {
+  app.get('/api/events', requireAuth, async (req, res) => {
     try {
       const events = await storage.getEvents();
       res.json(events);
@@ -183,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/events/upcoming', isAuthenticated, async (req, res) => {
+  app.get('/api/events/upcoming', requireAuth, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const events = await storage.getUpcomingEvents(limit);
@@ -194,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/events/search', isAuthenticated, async (req, res) => {
+  app.get('/api/events/search', requireAuth, async (req, res) => {
     try {
       const { city, startDate, endDate } = req.query;
       
@@ -213,9 +203,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/events', isAuthenticated, async (req: any, res) => {
+  app.post('/api/events', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertEventSchema.parse({ ...req.body, createdBy: userId });
       const event = await storage.createEvent(validatedData);
       
@@ -239,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Forecast routes
-  app.get('/api/forecasts', isAuthenticated, async (req, res) => {
+  app.get('/api/forecasts', requireAuth, async (req, res) => {
     try {
       const { hotelId } = req.query;
       const forecasts = await storage.getForecasts(hotelId as string);
@@ -250,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/forecasts/date-range', isAuthenticated, async (req, res) => {
+  app.get('/api/forecasts/date-range', requireAuth, async (req, res) => {
     try {
       const { hotelId, startDate, endDate } = req.query;
       
@@ -270,9 +260,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/forecasts', isAuthenticated, async (req: any, res) => {
+  app.post('/api/forecasts', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertForecastSchema.parse({ ...req.body, createdBy: userId });
       const forecast = await storage.createForecast(validatedData);
       
@@ -296,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Hotel actuals routes
-  app.get('/api/hotel-actuals/:hotelId', isAuthenticated, async (req, res) => {
+  app.get('/api/hotel-actuals/:hotelId', requireAuth, async (req, res) => {
     try {
       const { hotelId } = req.params;
       const { startDate, endDate } = req.query;
@@ -312,9 +302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/hotel-actuals', isAuthenticated, async (req: any, res) => {
+  app.post('/api/hotel-actuals', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { actuals } = req.body;
       
       if (!Array.isArray(actuals)) {
@@ -346,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/hotel-actuals/:hotelId/kpis', isAuthenticated, async (req, res) => {
+  app.get('/api/hotel-actuals/:hotelId/kpis', requireAuth, async (req, res) => {
     try {
       const { hotelId } = req.params;
       const kpis = await storage.getHotelPerformanceKPIs(hotelId);
@@ -358,9 +348,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Task routes
-  app.get('/api/tasks', isAuthenticated, async (req: any, res) => {
+  app.get('/api/tasks', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { hotelId, status } = req.query;
       
       let tasks;
@@ -377,9 +367,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/tasks/upcoming', isAuthenticated, async (req: any, res) => {
+  app.get('/api/tasks/upcoming', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const limit = parseInt(req.query.limit as string) || 10;
       const tasks = await storage.getUpcomingTasks(userId, limit);
       res.json(tasks);
@@ -389,9 +379,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/tasks', isAuthenticated, async (req: any, res) => {
+  app.post('/api/tasks', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertTaskSchema.parse({ ...req.body, createdBy: userId });
       const task = await storage.createTask(validatedData);
       
@@ -414,10 +404,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/tasks/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/tasks/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertTaskSchema.partial().parse(req.body);
       const task = await storage.updateTask(id, validatedData);
       
@@ -441,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Comment routes
-  app.get('/api/comments', isAuthenticated, async (req, res) => {
+  app.get('/api/comments', requireAuth, async (req, res) => {
     try {
       const { entityType, entityId } = req.query;
       
@@ -457,9 +447,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/comments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/comments', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertCommentSchema.parse({ ...req.body, authorId: userId });
       const comment = await storage.createComment(validatedData);
       
@@ -483,10 +473,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Chat route (placeholder for integration)
-  app.post('/api/ai-chat', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai-chat', requireAuth, async (req: any, res) => {
     try {
       const { message } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // This is a placeholder for AI integration
       // In a real implementation, you would integrate with OpenAI or similar service
