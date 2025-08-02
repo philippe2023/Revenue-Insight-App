@@ -47,7 +47,15 @@ export function setupEmailAuth(app: Express) {
   const sessionStore = new PostgresSessionStore({ 
     pool, 
     createTableIfMissing: true,
-    tableName: 'session'
+    tableName: 'session',
+    errorLog: (error: any) => {
+      console.error('Session store error:', error);
+    }
+  });
+
+  // Handle session store errors
+  sessionStore.on('error', (error: any) => {
+    console.error('Session store connection error:', error);
   });
 
   const sessionSettings: session.SessionOptions = {
@@ -98,9 +106,16 @@ export function setupEmailAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {
     try {
+      console.log('Deserializing user:', id);
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log('User not found during deserialization:', id);
+        return done(null, false);
+      }
+      console.log('User deserialized successfully:', user.id);
       done(null, user);
     } catch (error) {
+      console.error('Deserialization error:', error);
       done(error);
     }
   });
@@ -177,6 +192,9 @@ export function setupEmailAuth(app: Express) {
           return res.status(500).json({ message: "Login failed" });
         }
         
+        console.log('Login successful - Session ID:', req.sessionID);
+        console.log('Login successful - User:', user.id);
+        
         // Remove password from response
         const { password, ...userResponse } = user;
         res.json(userResponse);
@@ -193,13 +211,21 @@ export function setupEmailAuth(app: Express) {
   });
 
   // Get current user route
-  app.get("/api/auth/user", (req, res) => {
-    if (!req.isAuthenticated()) {
+  app.get("/api/auth/user", async (req, res) => {
+    console.log('Auth check - Session ID:', req.sessionID);
+    console.log('Auth check - Session:', req.session);
+    console.log('Auth check - Authenticated:', req.isAuthenticated());
+    console.log('Auth check - User:', req.user);
+    
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
-    // Remove password from response
-    const { password, ...userResponse } = req.user;
+    // Remove password from response if present
+    const userResponse = req.user.password ? 
+      (({ password, ...rest }) => rest)(req.user) : 
+      req.user;
+    
     res.json(userResponse);
   });
 }

@@ -1,0 +1,36 @@
+> rest-express@1.0.0 dev
+6:40:46 PM [express] serving on port 5000s
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+6:40:50 PM [express] GET /api/auth/user 401 in 2ms :: {"message":"Unauthorized"}
+6:40:52 PM [express] GET /api/auth/user 401 in 1ms :: {"message":"Unauthorized"}
+6:40:56 PM [express] GET /api/login 200 in 8ms
+6:40:58 PM [express] GET /api/auth/user 401 in 1ms :: {"message":"Unauthorized"}
+6:41:03 PM [express] GET /api/auth/user 401 in 2ms :: {"message":"Unauthorized"}
+6:41:28 PM [express] POST /api/auth/login 200 in 443ms :: {"id":"c46aae8b-3a84-4fb0-91b0-7a666fe51e5…
+6:41:29 PM [express] GET /api/login 200 in 139ms
+error: terminating connection due to administrator command
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getUser (/home/runner/workspace/server/storage.ts:115:20)
+    at async <anonymous> (/home/runner/workspace/server/emailAuth.ts:101:20)
+error: terminating connection due to administrator command
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PGStore._asyncQuery (/home/runner/workspace/node_modules/connect-pg-simple/index.js:322:21)
+error: terminating connection due to administrator command
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PGStore._asyncQuery (/home/runner/workspace/node_modules/connect-pg-simple/index.js:322:21)
+error: terminating connection due to administrator command
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getUser (/home/runner/workspace/server/storage.ts:115:20)
+    at async <anonymous> (/home/runner/workspace/server/emailAuth.ts:101:20)
+6:41:44 PM [express] GET /api/auth/user 200 in 138ms :: {"id":"c46aae8b-3a84-4fb0-91b0-7a666fe51e5b"…
+6:42:41 PM [express] POST /api/auth/login 200 in 387ms :: {"id":"8685f978-fd00-43c4-9e70-2cc9e583924…
+6:42:42 PM [express] GET /api/login 200 in 5ms
+6:42:45 PM [express] GET /api/auth/user 401 in 0ms :: {"message":"Unauthorized"}
