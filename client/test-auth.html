@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Test</title>
+</head>
+<body>
+    <div>
+        <h1>Authentication Test</h1>
+        <button onclick="login()">Login</button>
+        <button onclick="getUser()">Get User</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function login() {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@hotelcast.com',
+                        password: 'password123'
+                    }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 'Login: ' + JSON.stringify(data, null, 2);
+                console.log('Login successful:', data);
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Login Error: ' + error.message;
+                console.error('Login error:', error);
+            }
+        }
+
+        async function getUser() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 'User: ' + JSON.stringify(data, null, 2);
+                console.log('User data:', data);
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'User Error: ' + error.message;
+                console.error('User error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
