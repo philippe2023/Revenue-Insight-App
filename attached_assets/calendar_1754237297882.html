@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Task Calendar{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>
+                <i class="fas fa-calendar-alt me-2"></i>Task Calendar
+            </h2>
+            <p class="text-muted">Track all your tasks and deadlines in one place</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('create_task') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-2"></i>Create Task
+            </a>
+            <a href="{{ url_for('tasks') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-2"></i>Task List
+            </a>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>Calendar Legend
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <span class="badge" style="background-color: #007bff;">
+                                <i class="fas fa-circle me-1"></i>Tasks Assigned to Me
+                            </span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge" style="background-color: #28a745;">
+                                <i class="fas fa-circle me-1"></i>Tasks I Assigned
+                            </span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge" style="background-color: #fd7e14;">
+                                <i class="fas fa-circle me-1"></i>Following Tasks
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- FullCalendar CSS and JS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        },
+        height: 'auto',
+        events: {{ calendar_events|tojson }},
+        eventClick: function(info) {
+            // Navigate to task detail page
+            window.location.href = info.event.url;
+        },
+        eventDidMount: function(info) {
+            // Add priority indicator
+            const priority = info.event.extendedProps.priority;
+            const status = info.event.extendedProps.status;
+            
+            // Add priority icon
+            if (priority === 'urgent') {
+                info.el.querySelector('.fc-event-title').innerHTML = 
+                    '<i class="fas fa-exclamation-triangle me-1"></i>' + info.event.title;
+            } else if (priority === 'high') {
+                info.el.querySelector('.fc-event-title').innerHTML = 
+                    '<i class="fas fa-exclamation me-1"></i>' + info.event.title;
+            }
+            
+            // Add status styling
+            if (status === 'completed') {
+                info.el.style.opacity = '0.6';
+                info.el.style.textDecoration = 'line-through';
+            } else if (status === 'in_progress') {
+                info.el.style.borderLeft = '4px solid #ffc107';
+            }
+            
+            // Add tooltip
+            const type = info.event.extendedProps.type;
+            let tooltipText = info.event.title + '\\n';
+            tooltipText += 'Priority: ' + priority.charAt(0).toUpperCase() + priority.slice(1) + '\\n';
+            tooltipText += 'Status: ' + status.replace('_', ' ').toUpperCase() + '\\n';
+            
+            if (type === 'assigned_to_me') {
+                tooltipText += 'Assigned by: ' + info.event.extendedProps.assignedBy;
+            } else if (type === 'assigned_by_me') {
+                tooltipText += 'Assigned to: ' + info.event.extendedProps.assignedTo;
+            } else if (type === 'following') {
+                tooltipText += 'Assigned by: ' + info.event.extendedProps.assignedBy + '\\n';
+                tooltipText += 'Assigned to: ' + info.event.extendedProps.assignedTo;
+            }
+            
+            info.el.title = tooltipText;
+        },
+        dayMaxEvents: 3, // Limit events shown per day
+        moreLinkClick: 'popover', // Show popover for +more events
+        eventTimeFormat: {
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'short'
+        }
+    });
+    
+    calendar.render();
+});
+</script>
+{% endblock %}

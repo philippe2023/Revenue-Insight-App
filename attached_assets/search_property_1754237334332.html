@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Search Properties - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2>
+        <i class="fas fa-search me-2"></i>
+        Property Search & Forecast Tracking
+    </h2>
+    <p class="text-muted mb-0">Search for properties and view their events and saved forecasts</p>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-10">
+                <input type="search" class="form-control form-control-lg" name="search" 
+                       placeholder="Search by hotel code, name, or city..." 
+                       value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 btn-lg">
+                    <i class="fas fa-search me-1"></i>
+                    Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if search_query %}
+<!-- Search Results -->
+<div class="row">
+    <!-- Hotels Found -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-building me-2"></i>
+                    Hotels Found
+                    <span class="badge bg-secondary">{{ hotels|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if hotels %}
+                <div class="list-group list-group-flush">
+                    {% for hotel in hotels %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{{ url_for('hotel_detail', hotel_id=hotel.id) }}" class="text-decoration-none text-primary">
+                                        {{ hotel.hotel_code }} - {{ hotel.hotel_name }}
+                                        <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                                    </a>
+                                </h6>
+                                <p class="mb-1 text-muted">{{ hotel.city }}</p>
+                                <small class="text-muted">{{ hotel.inventory }} rooms</small>
+                            </div>
+                            <a href="{{ url_for('hotel_selection') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chart-bar me-1"></i>
+                                Forecast
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-building fa-2x mb-2"></i>
+                    <p>No hotels found matching your search.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Events in Cities -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar me-2"></i>
+                    Events in Matching Cities
+                    <span class="badge bg-secondary">{{ events|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if events %}
+                <div class="list-group list-group-flush">
+                    {% for event in events %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ event.event_name }}</h6>
+                                <p class="mb-1">
+                                    <span class="badge bg-info">{{ event.city }}</span>
+                                    <span class="badge bg-success ms-1">{{ event.duration }} days</span>
+                                </p>
+                                <small class="text-muted">
+                                    {{ event.start_date.strftime('%Y-%m-%d') }} to {{ event.end_date.strftime('%Y-%m-%d') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-calendar fa-2x mb-2"></i>
+                    <p>No events found in matching cities.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Forecasts -->
+{% if forecasts %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-chart-line me-2"></i>
+            Saved Forecasts
+            <span class="badge bg-secondary">{{ forecasts|length }}</span>
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Hotel</th>
+                        <th>Event</th>
+                        <th>Day</th>
+                        <th>Revenue</th>
+                        <th>ADR</th>
+                        <th>Occupancy</th>
+                        <th>Created By</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for forecast, event, hotel in forecasts %}
+                    {% if forecast.revenue or forecast.adr or forecast.occupancy %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('hotel_detail', hotel_id=hotel.id) }}" class="text-decoration-none">
+                                <strong class="text-primary">{{ hotel.hotel_code }}</strong>
+                                <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                            </a><br>
+                            <small class="text-muted">{{ hotel.hotel_name }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ event.event_name }}</strong><br>
+                            <small class="text-muted">{{ event.city }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">D{{ forecast.day_number }}</span>
+                        </td>
+                        <td>
+                            {% if forecast.revenue %}
+                                ${{ "{:,.2f}".format(forecast.revenue) }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if forecast.adr %}
+                                ${{ "{:,.2f}".format(forecast.adr) }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if forecast.occupancy %}
+                                {{ "{:.1f}".format(forecast.occupancy) }}%
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if forecast.created_by %}
+                                <i class="fas fa-user me-1"></i>{{ forecast.created_by }}
+                            {% else %}
+                                <span class="text-muted">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ forecast.updated_at.strftime('%Y-%m-%d %H:%M') if forecast.updated_at else forecast.created_at.strftime('%Y-%m-%d %H:%M') }}
+                            </small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- No Search Yet -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">Start Your Search</h4>
+        <p class="text-muted">Enter a hotel code, name, or city above to find properties and view their forecasts.</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card border-light">
+                    <div class="card-body">
+                        <i class="fas fa-building fa-2x text-primary mb-2"></i>
+                        <h6>Find Hotels</h6>
+                        <p class="small text-muted">Search by hotel code or name</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-light">
+                    <div class="card-body">
+                        <i class="fas fa-map-marker-alt fa-2x text-info mb-2"></i>
+                        <h6>Search by City</h6>
+                        <p class="small text-muted">Find all hotels in a city</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-light">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                        <h6>View Forecasts</h6>
+                        <p class="small text-muted">See saved forecast data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

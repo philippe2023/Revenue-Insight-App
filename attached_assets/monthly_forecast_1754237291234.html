@@ -1,0 +1,745 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Forecast - {{ hotel.hotel_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.forecast-container {
+    background: var(--bs-body-bg);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+.forecast-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.month-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    background: var(--bs-body-bg);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: bold;
+    padding: 15px 10px;
+    background: var(--bs-secondary-bg);
+    border-radius: 5px;
+}
+
+.calendar-day {
+    border: 2px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 140px;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: var(--bs-body-bg);
+}
+
+.calendar-day:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.calendar-day.other-month {
+    opacity: 0.4;
+    background: var(--bs-secondary-bg);
+}
+
+.calendar-day.has-event {
+    background: rgba(40, 167, 69, 0.1);
+    border-color: #28a745;
+}
+
+.day-number {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.day-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.event-name {
+    margin-top: 5px;
+    padding: 2px 4px;
+    background: rgba(40, 167, 69, 0.2);
+    border-radius: 3px;
+    font-size: 0.7rem;
+    text-align: center;
+    word-wrap: break-word;
+}
+
+.forecast-input {
+    width: 100%;
+    padding: 3px 5px;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 4px;
+    text-align: center;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+}
+
+.forecast-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    outline: none;
+}
+
+.date-cell {
+    font-weight: 600;
+    background: var(--bs-secondary-bg);
+    width: 100px;
+}
+
+.weekend {
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.has-event {
+    background: rgba(40, 167, 69, 0.1);
+    border-left: 4px solid #28a745;
+}
+
+.event-indicator {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    margin-left: 5px;
+}
+
+.upload-section {
+    background: var(--bs-secondary-bg);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.events-summary {
+    background: var(--bs-secondary-bg);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.event-card {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.saving-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    display: none;
+    z-index: 1000;
+}
+
+/* Save button styling */
+.btn-success.btn-lg {
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-success.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* Event items styling */
+.events-on-date {
+    margin: 2px 0;
+}
+
+.event-item {
+    background: var(--bs-primary);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 4px;
+    margin: 1px 0;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: block;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.event-item:hover {
+    background: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    transform: scale(1.02);
+}
+
+.event-item.event-start {
+    background: var(--bs-success);
+    border-left: 3px solid var(--bs-success-border-subtle);
+}
+
+.event-item.event-end {
+    background: var(--bs-danger);
+    border-right: 3px solid var(--bs-danger-border-subtle);
+}
+
+.event-item.event-middle {
+    background: var(--bs-info);
+}
+
+/* Events section styling */
+.events-header {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.events-header:hover {
+    color: var(--bs-primary);
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.8rem;
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.events-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="forecast-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Monthly Forecast
+                </h1>
+                <p class="mb-0">
+                    <a href="{{ url_for('hotel_detail', hotel_id=hotel.id) }}" class="text-white text-decoration-none">
+                        {{ hotel.hotel_name }} ({{ hotel.hotel_code }})
+                    </a>
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-bed me-1"></i>{{ hotel.inventory }} rooms
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ hotel.city }}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button class="btn btn-light" onclick="showUploadModal()">
+                    <i class="fas fa-upload me-2"></i>Upload Forecast
+                </button>
+                <a href="{{ url_for('download_monthly_template', hotel_id=hotel.id) }}" class="btn btn-outline-light">
+                    <i class="fas fa-download me-2"></i>Download Template
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-section" id="uploadSection" style="display: none;">
+        <h5><i class="fas fa-file-excel me-2"></i>Upload Monthly Forecast</h5>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="file" class="form-control" id="forecastFile" accept=".csv,.xlsx" required>
+                    <small class="form-text text-muted">Upload CSV or Excel file with daily forecast data</small>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-upload me-2"></i>Upload & Process
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div id="uploadStatus" class="mt-3"></div>
+    </div>
+
+    <!-- Referenced Events Summary -->
+    <div class="events-summary">
+        <h5 class="events-header" onclick="toggleEventsSection()">
+            <i class="fas fa-calendar-check me-2"></i>
+            Referenced Events for {{ hotel.hotel_name }}
+            <i class="fas fa-chevron-down toggle-icon" id="eventsToggleIcon"></i>
+        </h5>
+        <div id="eventsList" class="events-content" style="display: none;">
+            <!-- Events will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Save All Button -->
+    <div class="text-center mb-3">
+        <button class="btn btn-success btn-lg" onclick="saveAllForecasts()">
+            <i class="fas fa-save me-2"></i>Save All Monthly Forecasts
+        </button>
+        <div id="saveAllStatus" class="mt-2"></div>
+    </div>
+
+    <!-- Month Navigation -->
+    <div class="month-navigation">
+        <button class="btn btn-outline-primary" onclick="changeMonth(-1)">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <h3 id="currentMonth" class="mb-0">{{ current_month }}</h3>
+        <button class="btn btn-outline-primary" onclick="changeMonth(1)">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="forecast-container">
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Day Headers -->
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+            
+            <!-- Calendar Days will be rendered here -->
+        </div>
+    </div>
+</div>
+
+<!-- Saving Indicator -->
+<div id="savingIndicator" class="saving-indicator">
+    <i class="fas fa-save me-2"></i>Saving...
+</div>
+
+<script>
+let currentDate = new Date();
+const hotelId = {{ hotel.id }};
+let monthlyData = {};
+let eventData = {};
+let eventsByDate = {};
+let allEvents = [];
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    loadMonthData();
+    loadHotelEvents();
+});
+
+function changeMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    loadMonthData();
+}
+
+function loadHotelEvents() {
+    // Load all events for this hotel to show in summary
+    fetch(`/api/hotel-events/${hotelId}`)
+        .then(response => response.json())
+        .then(data => {
+            allEvents = data.events || [];
+            renderEventsDisplay();
+        })
+        .catch(err => console.log('No events found for hotel'));
+}
+
+function renderEventsDisplay() {
+    const eventsList = document.getElementById('eventsList');
+    if (allEvents.length === 0) {
+        eventsList.innerHTML = '<p class="text-muted mb-0">No events found for this hotel location.</p>';
+        return;
+    }
+    
+    let eventsHTML = '<div class="row">';
+    allEvents.forEach(event => {
+        eventsHTML += `
+            <div class="col-md-6 mb-2">
+                <div class="event-card">
+                    <strong>${event.name}</strong><br>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>
+                        ${new Date(event.start_date).toLocaleDateString()} - 
+                        ${new Date(event.end_date).toLocaleDateString()}
+                    </small>
+                </div>
+            </div>
+        `;
+    });
+    eventsHTML += '</div>';
+    eventsList.innerHTML = eventsHTML;
+}
+
+function loadMonthData() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    
+    // Update month display
+    document.getElementById('currentMonth').textContent = 
+        currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    
+    // Fetch monthly forecast data
+    fetch(`/api/monthly-forecast/${hotelId}/${year}/${month}`)
+        .then(response => response.json())
+        .then(data => {
+            monthlyData = data.monthly_forecasts || {};
+            eventData = data.event_forecasts || {};
+            eventsByDate = data.events_by_date || {};
+            renderCalendar();
+            
+            // Populate input fields with existing data
+            setTimeout(() => {
+                populateInputFields();
+            }, 100);
+        })
+        .catch(err => {
+            console.log('Error loading forecast data:', err);
+            renderCalendar(); // Render empty calendar
+        });
+}
+
+function populateInputFields() {
+    // Populate monthly forecast data into input fields
+    Object.keys(monthlyData).forEach(dateStr => {
+        const data = monthlyData[dateStr];
+        
+        const revenueInput = document.querySelector(`input[data-date="${dateStr}"][data-field="revenue"]`);
+        const adrInput = document.querySelector(`input[data-date="${dateStr}"][data-field="adr"]`);
+        const occupancyInput = document.querySelector(`input[data-date="${dateStr}"][data-field="occupancy"]`);
+        
+        if (revenueInput && data.revenue !== null) {
+            revenueInput.value = data.revenue;
+        }
+        if (adrInput && data.adr !== null) {
+            adrInput.value = data.adr;
+        }  
+        if (occupancyInput && data.occupancy !== null) {
+            occupancyInput.value = data.occupancy;
+        }
+    });
+}
+
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    let calendarHTML = '';
+    
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        calendarHTML += `<div class="calendar-day other-month">
+            <div class="day-number">${day}</div>
+        </div>`;
+    }
+    
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateObj = new Date(year, month, day);
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+        
+        const forecast = monthlyData[dateStr] || {};
+        const eventForecast = eventData[dateStr];
+        const eventsOnDate = eventsByDate[dateStr] || [];
+        const hasEvent = eventsOnDate.length > 0;
+        
+        // Create events display
+        let eventsHTML = '';
+        if (eventsOnDate.length > 0) {
+            eventsHTML = '<div class="events-on-date">';
+            eventsOnDate.forEach(event => {
+                const eventClass = event.is_start_date ? 'event-start' : (event.is_end_date ? 'event-end' : 'event-middle');
+                eventsHTML += `
+                    <div class="event-item ${eventClass}" title="${event.name}\\n${new Date(event.start_date).toLocaleDateString()} - ${new Date(event.end_date).toLocaleDateString()}" onclick="viewEvent(${event.id})">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        ${event.name.length > 15 ? event.name.substring(0, 12) + '...' : event.name}
+                    </div>
+                `;
+            });
+            eventsHTML += '</div>';
+        }
+        
+        calendarHTML += `
+            <div class="calendar-day ${isWeekend ? 'weekend' : ''} ${hasEvent ? 'has-event' : ''}">
+                <div class="day-number">${day}</div>
+                ${eventsHTML}
+                <div class="day-inputs">
+                    <input type="number" class="forecast-input" 
+                           value="${forecast.revenue || ''}" 
+                           placeholder="Revenue"
+                           title="Revenue ($)"
+                           data-date="${dateStr}" 
+                           data-field="revenue"
+                           onchange="saveForecastValue(this)"
+                           step="0.01">
+                    <input type="number" class="forecast-input" 
+                           value="${forecast.adr || ''}" 
+                           placeholder="ADR"
+                           title="ADR ($)"
+                           data-date="${dateStr}" 
+                           data-field="adr"
+                           onchange="saveForecastValue(this)"
+                           step="0.01">
+                    <input type="number" class="forecast-input" 
+                           value="${forecast.occupancy || ''}" 
+                           placeholder="Occ %"
+                           title="Occupancy (%)"
+                           data-date="${dateStr}" 
+                           data-field="occupancy"
+                           onchange="saveForecastValue(this)"
+                           min="0" max="100" step="0.1">
+                </div>
+            </div>
+        `;
+    }
+    
+    // Next month days
+    const remainingDays = 42 - (firstDay + daysInMonth);
+    for (let day = 1; day <= remainingDays; day++) {
+        calendarHTML += `<div class="calendar-day other-month">
+            <div class="day-number">${day}</div>
+        </div>`;
+    }
+    
+    // Clear existing calendar days (keep headers)
+    const grid = document.getElementById('calendarGrid');
+    const existingDays = grid.querySelectorAll('.calendar-day, .calendar-day.other-month, .calendar-day.weekend, .calendar-day.has-event');
+    existingDays.forEach(day => day.remove());
+    
+    // Add new calendar days
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = calendarHTML;
+    while (tempDiv.firstChild) {
+        grid.appendChild(tempDiv.firstChild);
+    }
+}
+
+function saveForecastValue(input) {
+    const date = input.dataset.date;
+    const field = input.dataset.field;
+    const value = input.value || null;
+    
+    // Update local data immediately
+    if (!monthlyData[date]) monthlyData[date] = {};
+    monthlyData[date][field] = value;
+    
+    // Collect all values for this date
+    const allInputsForDate = document.querySelectorAll(`input[data-date="${date}"]`);
+    const completeData = {
+        date: date,
+        revenue: null,
+        adr: null,
+        occupancy: null
+    };
+    
+    allInputsForDate.forEach(inp => {
+        const fieldName = inp.dataset.field;
+        const fieldValue = inp.value || null;
+        completeData[fieldName] = fieldValue;
+    });
+    
+    // Show saving indicator
+    const indicator = document.getElementById('savingIndicator');
+    indicator.style.display = 'block';
+    
+    fetch(`/api/monthly-forecast/${hotelId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(completeData)
+    })
+    .then(response => response.json())
+    .then(result => {
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 1000);
+        
+        if (!result.success) {
+            alert('Error saving forecast: ' + result.message);
+            input.focus();
+        }
+    })
+    .catch(err => {
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 1000);
+        alert('Error saving forecast. Please try again.');
+        input.focus();
+    });
+}
+
+function saveAllForecasts() {
+    const saveAllBtn = document.querySelector('button[onclick="saveAllForecasts()"]');
+    const statusDiv = document.getElementById('saveAllStatus');
+    
+    // Disable button and show progress
+    saveAllBtn.disabled = true;
+    saveAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving All Forecasts...';
+    statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-clock me-2"></i>Saving all forecast data...</div>';
+    
+    // Collect all forecast data
+    const allInputs = document.querySelectorAll('.forecast-input[data-date]');
+    const forecasts = {};
+    
+    allInputs.forEach(input => {
+        const date = input.dataset.date;
+        const field = input.dataset.field;
+        const value = input.value || null;
+        
+        if (!forecasts[date]) {
+            forecasts[date] = { date: date, revenue: null, adr: null, occupancy: null };
+        }
+        forecasts[date][field] = value;
+    });
+    
+    // Save each forecast
+    const savePromises = Object.values(forecasts).map(forecast => {
+        return fetch(`/api/monthly-forecast/${hotelId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(forecast)
+        }).then(response => response.json());
+    });
+    
+    Promise.all(savePromises)
+        .then(results => {
+            const failures = results.filter(r => !r.success);
+            
+            if (failures.length === 0) {
+                statusDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>All forecasts saved successfully!</div>';
+            } else {
+                statusDiv.innerHTML = `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Saved with ${failures.length} errors. Please check individual entries.</div>`;
+            }
+            
+            // Hide status after 3 seconds
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        })
+        .catch(err => {
+            statusDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times me-2"></i>Error saving forecasts. Please try again.</div>';
+        })
+        .finally(() => {
+            // Re-enable button
+            saveAllBtn.disabled = false;
+            saveAllBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save All Monthly Forecasts';
+        });
+}
+
+function viewEvent(eventId) {
+    // Open event detail page in new tab
+    window.open(`/event/${eventId}`, '_blank');
+}
+
+function toggleEventsSection() {
+    const eventsList = document.getElementById('eventsList');
+    const toggleIcon = document.getElementById('eventsToggleIcon');
+    
+    if (eventsList.style.display === 'none') {
+        eventsList.style.display = 'block';
+        toggleIcon.classList.add('rotated');
+        toggleIcon.classList.remove('fa-chevron-down');
+        toggleIcon.classList.add('fa-chevron-up');
+    } else {
+        eventsList.style.display = 'none';
+        toggleIcon.classList.remove('rotated');
+        toggleIcon.classList.remove('fa-chevron-up');
+        toggleIcon.classList.add('fa-chevron-down');
+    }
+}
+
+function showUploadModal() {
+    document.getElementById('uploadSection').style.display = 
+        document.getElementById('uploadSection').style.display === 'none' ? 'block' : 'none';
+}
+
+// File upload handling
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('file', document.getElementById('forecastFile').files[0]);
+    
+    document.getElementById('uploadStatus').innerHTML = 
+        '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Processing file...</div>';
+    
+    fetch(`/api/monthly-forecast/${hotelId}/upload`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            document.getElementById('uploadStatus').innerHTML = 
+                `<div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Successfully uploaded ${result.count} forecast entries
+                </div>`;
+            loadMonthData();
+            setTimeout(() => {
+                document.getElementById('uploadSection').style.display = 'none';
+                document.getElementById('uploadStatus').innerHTML = '';
+            }, 3000);
+        } else {
+            document.getElementById('uploadStatus').innerHTML = 
+                `<div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error: ${result.message}
+                </div>`;
+        }
+    });
+});
+</script>
+{% endblock %}

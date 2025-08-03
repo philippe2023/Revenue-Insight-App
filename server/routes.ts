@@ -12,6 +12,7 @@ import {
   insertCommentSchema,
 } from "@shared/schema";
 import { z } from "zod";
+import { initializeTestData } from "./data-init";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // CORS configuration
@@ -116,39 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hotel routes
   app.get('/api/hotels', async (req: any, res) => {
     try {
-      // Mock hotel data
-      const hotels = [
-        {
-          id: '1',
-          name: 'Grand Plaza Hotel',
-          location: 'New York, NY',
-          totalRooms: 250,
-          occupancyRate: 85.2,
-          averageRate: 225,
-          revenue: 485000,
-          status: 'active'
-        },
-        {
-          id: '2', 
-          name: 'Seaside Resort',
-          location: 'Miami, FL',
-          totalRooms: 180,
-          occupancyRate: 78.9,
-          averageRate: 195,
-          revenue: 325000,
-          status: 'active'
-        },
-        {
-          id: '3',
-          name: 'Mountain View Lodge',
-          location: 'Denver, CO', 
-          totalRooms: 120,
-          occupancyRate: 82.1,
-          averageRate: 165,
-          revenue: 285000,
-          status: 'active'
-        }
-      ];
+      const hotels = await storage.getHotels('');
       res.json(hotels);
     } catch (error) {
       console.error("Error fetching hotels:", error);
@@ -172,19 +141,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/hotels', async (req: any, res) => {
     try {
-      // Mock hotel creation since we removed authentication
-      const newHotel = {
-        id: Date.now().toString(),
-        name: req.body.name || 'New Hotel',
-        location: req.body.location || 'Unknown Location',
-        totalRooms: req.body.totalRooms || 100,
-        occupancyRate: 0,
-        averageRate: req.body.averageRate || 150,
-        revenue: 0,
-        status: 'active'
+      const result = insertHotelSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid hotel data", errors: result.error.errors });
+      }
+
+      const hotelData = {
+        ...result.data,
+        ownerId: 'demo-user', // Use demo user ID since we don't have auth
       };
 
-      res.status(201).json(newHotel);
+      const hotel = await storage.createHotel(hotelData);
+      res.status(201).json(hotel);
     } catch (error) {
       console.error("Error creating hotel:", error);
       res.status(500).json({ message: "Failed to create hotel" });
@@ -251,39 +219,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/events/upcoming', async (req, res) => {
     try {
-      // Mock upcoming events data
-      const events = [
-        {
-          id: '1',
-          name: 'Tech Conference 2025',
-          category: 'conference',
-          startDate: '2025-08-15',
-          endDate: '2025-08-17',
-          city: 'San Francisco',
-          expectedAttendees: 5000,
-          potentialImpact: 'high'
-        },
-        {
-          id: '2', 
-          name: 'Music Festival',
-          category: 'festival',
-          startDate: '2025-08-22',
-          endDate: '2025-08-24',
-          city: 'Austin',
-          expectedAttendees: 15000,
-          potentialImpact: 'very-high'
-        },
-        {
-          id: '3',
-          name: 'Trade Show',
-          category: 'trade-show',
-          startDate: '2025-09-05',
-          endDate: '2025-09-07',
-          city: 'Chicago',
-          expectedAttendees: 8000,
-          potentialImpact: 'high'
-        }
-      ];
+      const limit = parseInt(req.query.limit as string) || 10;
+      const events = await storage.getUpcomingEvents(limit);
       res.json(events);
     } catch (error) {
       console.error("Error fetching upcoming events:", error);
@@ -363,25 +300,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Forecast routes
   app.get('/api/forecasts', async (req, res) => {
     try {
-      // Mock forecast data
-      const forecasts = [
-        {
-          id: '1',
-          hotelId: '1',
-          date: '2025-08-15',
-          predictedRevenue: 25000,
-          predictedOccupancy: 85,
-          confidence: 0.92
-        },
-        {
-          id: '2',
-          hotelId: '1', 
-          date: '2025-08-16',
-          predictedRevenue: 28000,
-          predictedOccupancy: 92,
-          confidence: 0.89
-        }
-      ];
+      const { hotelId } = req.query;
+      const forecasts = await storage.getForecasts(hotelId as string);
       res.json(forecasts);
     } catch (error) {
       console.error("Error fetching forecasts:", error);
@@ -411,18 +331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/forecasts', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const validatedData = insertForecastSchema.parse({ ...req.body, createdBy: userId });
-      const forecast = await storage.createForecast(validatedData);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'create',
-        entityType: 'forecast',
-        entityId: forecast.id,
-        metadata: { hotelId: forecast.hotelId, forecastType: forecast.forecastType },
+      const validatedData = insertForecastSchema.parse({ 
+        ...req.body, 
+        createdBy: 'demo-user' // Use demo user since we don't have auth
       });
+      const forecast = await storage.createForecast(validatedData);
 
       res.status(201).json(forecast);
     } catch (error) {
@@ -435,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Hotel actuals routes
-  app.get('/api/hotel-actuals/:hotelId', requireAuth, async (req, res) => {
+  app.get('/api/hotel-actuals/:hotelId', async (req, res) => {
     try {
       const { hotelId } = req.params;
       const { startDate, endDate } = req.query;
@@ -451,9 +364,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/hotel-actuals', requireAuth, async (req: any, res) => {
+  app.post('/api/hotel-actuals', async (req: any, res) => {
     try {
-      const userId = req.user.id;
       const { actuals } = req.body;
       
       if (!Array.isArray(actuals)) {
@@ -461,19 +373,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedActuals = actuals.map(actual => 
-        insertHotelActualSchema.parse({ ...actual, uploadedBy: userId })
+        insertHotelActualSchema.parse({ ...actual, uploadedBy: 'demo-user' })
       );
       
       const createdActuals = await storage.createHotelActuals(validatedActuals);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'upload',
-        entityType: 'hotel_actuals',
-        entityId: createdActuals[0]?.hotelId || '',
-        metadata: { count: createdActuals.length },
-      });
 
       res.status(201).json(createdActuals);
     } catch (error) {
@@ -485,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/hotel-actuals/:hotelId/kpis', requireAuth, async (req, res) => {
+  app.get('/api/hotel-actuals/:hotelId/kpis', async (req, res) => {
     try {
       const { hotelId } = req.params;
       const kpis = await storage.getHotelPerformanceKPIs(hotelId);
@@ -497,16 +400,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Task routes
-  app.get('/api/tasks', requireAuth, async (req: any, res) => {
+  app.get('/api/tasks', async (req: any, res) => {
     try {
-      const userId = req.user.id;
       const { hotelId, status } = req.query;
       
       let tasks;
       if (status) {
-        tasks = await storage.getTasksByStatus(status as string, userId);
+        tasks = await storage.getTasksByStatus(status as string, 'demo-user');
       } else {
-        tasks = await storage.getTasks(userId, hotelId as string);
+        tasks = await storage.getTasks('demo-user', hotelId as string);
       }
       
       res.json(tasks);
@@ -516,11 +418,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/tasks/upcoming', requireAuth, async (req: any, res) => {
+  app.get('/api/tasks/upcoming', async (req: any, res) => {
     try {
-      const userId = req.user.id;
       const limit = parseInt(req.query.limit as string) || 10;
-      const tasks = await storage.getUpcomingTasks(userId, limit);
+      const tasks = await storage.getUpcomingTasks('demo-user', limit);
       res.json(tasks);
     } catch (error) {
       console.error("Error fetching upcoming tasks:", error);
@@ -528,20 +429,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/tasks', requireAuth, async (req: any, res) => {
+  app.post('/api/tasks', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const validatedData = insertTaskSchema.parse({ ...req.body, createdBy: userId });
+      const validatedData = insertTaskSchema.parse({ ...req.body, createdBy: 'demo-user' });
       const task = await storage.createTask(validatedData);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'create',
-        entityType: 'task',
-        entityId: task.id,
-        metadata: { taskTitle: task.title },
-      });
 
       res.status(201).json(task);
     } catch (error) {
@@ -553,21 +444,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/tasks/:id', requireAuth, async (req: any, res) => {
+  app.put('/api/tasks/:id', async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
       const validatedData = insertTaskSchema.partial().parse(req.body);
       const task = await storage.updateTask(id, validatedData);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'update',
-        entityType: 'task',
-        entityId: id,
-        metadata: { taskTitle: task.title, status: task.status },
-      });
 
       res.json(task);
     } catch (error) {
@@ -580,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Comment routes
-  app.get('/api/comments', requireAuth, async (req, res) => {
+  app.get('/api/comments', async (req, res) => {
     try {
       const { entityType, entityId } = req.query;
       
@@ -596,20 +477,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/comments', requireAuth, async (req: any, res) => {
+  app.post('/api/comments', async (req: any, res) => {
     try {
-      const userId = req.user.id;
-      const validatedData = insertCommentSchema.parse({ ...req.body, authorId: userId });
+      const validatedData = insertCommentSchema.parse({ ...req.body, authorId: 'demo-user' });
       const comment = await storage.createComment(validatedData);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'create',
-        entityType: 'comment',
-        entityId: comment.id,
-        metadata: { entityType: comment.entityType, entityId: comment.entityId },
-      });
 
       res.status(201).json(comment);
     } catch (error) {
@@ -618,6 +489,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Error creating comment:", error);
       res.status(500).json({ message: "Failed to create comment" });
+    }
+  });
+
+  // Data initialization route
+  app.post('/api/init-data', async (req: any, res) => {
+    try {
+      const success = await initializeTestData();
+      if (success) {
+        res.json({ message: 'Test data initialized successfully' });
+      } else {
+        res.status(500).json({ message: 'Failed to initialize test data' });
+      }
+    } catch (error) {
+      console.error("Error initializing test data:", error);
+      res.status(500).json({ message: "Failed to initialize test data" });
+    }
+  });
+
+  // Excel upload route for analytics
+  app.post('/api/analytics/upload-excel', async (req: any, res) => {
+    try {
+      // For now, mock Excel processing since we don't have file upload middleware
+      // In a real implementation, you would use multer or similar to handle file uploads
+      const mockData = {
+        recordsProcessed: 45,
+        timeRange: "July 2025",
+        summary: {
+          avgOccupancy: 87.5,
+          avgDailyRate: 245.50,
+          totalRevenue: 156750
+        }
+      };
+
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      res.json({
+        message: "Excel file processed successfully",
+        data: mockData
+      });
+    } catch (error) {
+      console.error("Error processing Excel upload:", error);
+      res.status(500).json({ message: "Failed to process Excel file" });
     }
   });
 

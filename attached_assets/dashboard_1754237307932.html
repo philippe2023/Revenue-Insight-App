@@ -1,0 +1,618 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ super() }}{% endblock %}
+
+{% block content %}
+<!-- Welcome Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary text-white border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h1 class="h2 mb-1">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Welcome back, {{ current_user.get_display_name() }}!
+                        </h1>
+                        <p class="mb-0 opacity-75">
+                            Revenue Manager Dashboard - {{ current_user.role or 'Revenue Manager' }}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ current_user.last_login.strftime('%B %d, %Y') if current_user.last_login else 'Today' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-chart-line fa-2x text-primary"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Total Forecasts</p>
+                    <h4 class="mb-0">{{ total_forecasts }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-building fa-2x text-success"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Hotels Managed</p>
+                    <h4 class="mb-0">{{ total_hotels }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-tasks fa-2x text-info"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-1 small">Active Tasks</p>
+                    <h4 class="mb-0">{{ active_tasks or 0 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Netflix-Style Hotel Carousel -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-building me-2"></i>Hotels
+                    {% if assigned_hotels %}
+                    <span class="badge bg-primary ms-2">{{ assigned_hotels|length }} Assigned</span>
+                    {% endif %}
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleCarousel('hotelsCarousel')" id="hotelToggleBtn">
+                        <i class="fas fa-minus me-1"></i>Minimize
+                    </button>
+                    <a href="{{ url_for('manage_hotels') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-cog me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+            <div class="card-body" id="hotelsCarousel">
+                <!-- Assigned Hotels Section -->
+                {% if assigned_hotels %}
+                <div class="mb-4">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-star me-2"></i>My Assigned Hotels
+                    </h6>
+                    <div class="hotel-carousel mb-4">
+                        <div class="carousel-container">
+                            <div class="carousel-track" id="assignedHotelsTrack">
+                                {% for hotel in assigned_hotels %}
+                                <div class="hotel-card">
+                                    <div class="card h-100 border">
+                                        {% if hotel.image_url %}
+                                        <img src="{{ hotel.image_url }}" class="card-img-top hotel-card-img" alt="{{ hotel.hotel_name }}">
+                                        {% else %}
+                                        <div class="card-img-top hotel-card-img-placeholder d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-building fa-2x text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ hotel.hotel_name }}</h6>
+                                            <p class="card-text text-muted small">
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ hotel.city }}
+                                                <br><i class="fas fa-bed me-1"></i>{{ hotel.inventory }} rooms
+                                            </p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-success">Assigned</span>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('hotel_detail', hotel_id=hotel.id) }}" class="btn btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="/select_hotel?hotel_id={{ hotel.id }}" class="btn btn-primary">
+                                                        <i class="fas fa-chart-line"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Assignment Actions -->
+                                        <div class="card-footer">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-users me-1"></i>Assign
+                                                </button>
+                                                <div class="dropdown-menu">
+                                                    <form method="POST" action="{{ url_for('assign_hotel', hotel_id=hotel.id) }}">
+                                                        <div class="px-3 py-2">
+                                                            <div class="mb-2">
+                                                                <label class="form-label small">Assign to:</label>
+                                                                <select name="user_id" class="form-select form-select-sm" required>
+                                                                    <option value="">Select user</option>
+                                                                    {% for user in all_users %}
+                                                                    <option value="{{ user.id }}">{{ user.get_display_name() }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <select name="role" class="form-select form-select-sm">
+                                                                    <option value="manager">Manager</option>
+                                                                    <option value="analyst">Analyst</option>
+                                                                    <option value="coordinator">Coordinator</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input" type="checkbox" name="is_primary" id="primary_{{ hotel.id }}">
+                                                                <label class="form-check-label small" for="primary_{{ hotel.id }}">Primary</label>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                                <i class="fas fa-plus me-1"></i>Assign
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <button class="carousel-btn carousel-btn-prev" onclick="scrollCarousel('assignedHotelsTrack', -1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-btn carousel-btn-next" onclick="scrollCarousel('assignedHotelsTrack', 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- All Hotels Section -->
+                <div class="mb-3">
+                    <h6 class="text-secondary mb-3">
+                        <i class="fas fa-building me-2"></i>All Hotels
+                    </h6>
+                    <div class="hotel-carousel">
+                        <div class="carousel-container">
+                            <div class="carousel-track" id="allHotelsTrack">
+                                {% for hotel in other_hotels %}
+                                <div class="hotel-card">
+                                    <div class="card h-100 border">
+                                        {% if hotel.image_url %}
+                                        <img src="{{ hotel.image_url }}" class="card-img-top hotel-card-img" alt="{{ hotel.hotel_name }}">
+                                        {% else %}
+                                        <div class="card-img-top hotel-card-img-placeholder d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-building fa-2x text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ hotel.hotel_name }}</h6>
+                                            <p class="card-text text-muted small">
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ hotel.city }}
+                                                <br><i class="fas fa-bed me-1"></i>{{ hotel.inventory }} rooms
+                                            </p>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted">{{ hotel.hotel_code }}</small>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('hotel_detail', hotel_id=hotel.id) }}" class="btn btn-outline-primary">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="/select_hotel?hotel_id={{ hotel.id }}" class="btn btn-primary">
+                                                        <i class="fas fa-chart-line"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Assignment Actions -->
+                                        <div class="card-footer">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-users me-1"></i>Assign
+                                                </button>
+                                                <div class="dropdown-menu">
+                                                    <form method="POST" action="{{ url_for('assign_hotel', hotel_id=hotel.id) }}">
+                                                        <div class="px-3 py-2">
+                                                            <div class="mb-2">
+                                                                <label class="form-label small">Assign to:</label>
+                                                                <select name="user_id" class="form-select form-select-sm" required>
+                                                                    <option value="">Select user</option>
+                                                                    {% for user in all_users %}
+                                                                    <option value="{{ user.id }}">{{ user.get_display_name() }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-2">
+                                                                <select name="role" class="form-select form-select-sm">
+                                                                    <option value="manager">Manager</option>
+                                                                    <option value="analyst">Analyst</option>
+                                                                    <option value="coordinator">Coordinator</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input" type="checkbox" name="is_primary" id="primary_all_{{ hotel.id }}">
+                                                                <label class="form-check-label small" for="primary_all_{{ hotel.id }}">Primary</label>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                                <i class="fas fa-plus me-1"></i>Assign
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <button class="carousel-btn carousel-btn-prev" onclick="scrollCarousel('allHotelsTrack', -1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-btn carousel-btn-next" onclick="scrollCarousel('allHotelsTrack', 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Netflix-Style Events Carousel -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar me-2"></i>Upcoming Events
+                    <span class="badge bg-info ms-2">{{ upcoming_events|length }}</span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleCarousel('eventsCarousel')" id="eventToggleBtn">
+                        <i class="fas fa-minus me-1"></i>Minimize
+                    </button>
+                    <a href="{{ url_for('manage_events') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-cog me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+            <div class="card-body" id="eventsCarousel">
+                {% if upcoming_events %}
+                <div class="event-carousel">
+                    <div class="carousel-container">
+                        <div class="carousel-track" id="eventsTrack">
+                            {% for event in upcoming_events %}
+                            <div class="event-card">
+                                <div class="card h-100 border">
+                                    {% if event.image_url %}
+                                    <img src="{{ event.image_url }}" class="card-img-top event-card-img" alt="{{ event.event_name }}">
+                                    {% else %}
+                                    <div class="card-img-top event-card-img-placeholder d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-calendar fa-2x text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ event.event_name }}</h6>
+                                        <p class="card-text text-muted small">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ event.city }}
+                                            <br><i class="fas fa-calendar me-1"></i>{{ event.start_date.strftime('%m/%d/%Y') }} - {{ event.end_date.strftime('%m/%d/%Y') }}
+                                        </p>
+                                        {% if event.website_url %}
+                                        <p class="card-text">
+                                            <a href="{{ event.website_url }}" target="_blank" class="text-decoration-none small">
+                                                <i class="fas fa-external-link-alt me-1"></i>Event Website
+                                            </a>
+                                        </p>
+                                        {% endif %}
+                                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                                            {% set days_until = (event.start_date - date.today()).days %}
+                                            <span class="badge bg-info">
+                                                {% if days_until < 0 %}
+                                                In Progress
+                                                {% elif days_until == 0 %}
+                                                Today
+                                                {% elif days_until == 1 %}
+                                                Tomorrow
+                                                {% else %}
+                                                {{ days_until }} days
+                                                {% endif %}
+                                            </span>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="/select_hotel?event_id={{ event.id }}" class="btn btn-primary">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button class="carousel-btn carousel-btn-prev" onclick="scrollCarousel('eventsTrack', -1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="carousel-btn carousel-btn-next" onclick="scrollCarousel('eventsTrack', 1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                    <h5>No Upcoming Events</h5>
+                    <p class="text-muted">Events will appear here when they are added to the system.</p>
+                    <a href="{{ url_for('manage_events') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add First Event
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Forecasts Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Recent Forecasting Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_forecasts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Hotel</th>
+                                <th>Event</th>
+                                <th>Date Range</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for forecast, event, hotel in recent_forecasts %}
+                            <tr>
+                                <td>
+                                    <strong>{{ hotel.hotel_name }}</strong><br>
+                                    <small class="text-muted">{{ hotel.hotel_code }} - {{ hotel.city }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ event.event_name }}</strong><br>
+                                    <small class="text-muted">{{ event.city }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ event.start_date.strftime('%m/%d/%Y') }} - {{ event.end_date.strftime('%m/%d/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ forecast.updated_at.strftime('%m/%d/%Y %I:%M %p') if forecast.updated_at else 'N/A' }}</small>
+                                </td>
+                                <td>
+                                    <a href="/select_hotel?hotel_id={{ hotel.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit me-1"></i>Edit Forecast
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <h5>No Recent Forecasting Activity</h5>
+                    <p class="text-muted">Start by selecting a hotel and creating your first forecast.</p>
+                    <a href="/select_hotel" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Create First Forecast
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+/* Netflix-style Carousel Styles */
+.hotel-carousel, .event-carousel {
+    position: relative;
+    margin: 0 40px;
+}
+
+.carousel-container {
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.3s ease;
+    gap: 15px;
+    padding: 10px 0;
+}
+
+.hotel-card, .event-card {
+    flex: 0 0 280px;
+    height: 400px;
+}
+
+.hotel-card-img, .event-card-img {
+    height: 150px;
+    object-fit: cover;
+}
+
+.hotel-card-img-placeholder, .event-card-img-placeholder {
+    height: 150px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.carousel-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.carousel-btn-prev {
+    left: 0;
+}
+
+.carousel-btn-next {
+    right: 0;
+}
+
+/* Card hover effects */
+.hotel-card .card, .event-card .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hotel-card .card:hover, .event-card .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hotel-card, .event-card {
+        flex: 0 0 250px;
+    }
+    
+    .hotel-carousel, .event-carousel {
+        margin: 0 20px;
+    }
+}
+</style>
+
+<script>
+function scrollCarousel(trackId, direction) {
+    const track = document.getElementById(trackId);
+    const cardWidth = 295; // 280px card + 15px gap
+    const scrollAmount = cardWidth * 3; // Scroll 3 cards at a time
+    
+    const currentTransform = track.style.transform;
+    const currentX = currentTransform ? parseInt(currentTransform.replace('translateX(', '').replace('px)', '')) : 0;
+    
+    const maxCards = track.children.length;
+    const containerWidth = track.parentElement.offsetWidth;
+    const visibleCards = Math.floor(containerWidth / cardWidth);
+    const maxScroll = -(cardWidth * (maxCards - visibleCards));
+    
+    let newX = currentX + (scrollAmount * direction);
+    
+    // Prevent scrolling beyond bounds
+    if (newX > 0) newX = 0;
+    if (newX < maxScroll) newX = maxScroll;
+    
+    track.style.transform = `translateX(${newX}px)`;
+}
+
+// Auto-hide carousel buttons when not needed
+document.addEventListener('DOMContentLoaded', function() {
+    const carousels = document.querySelectorAll('.carousel-track');
+    
+    carousels.forEach(track => {
+        const container = track.parentElement.parentElement;
+        const containerWidth = container.offsetWidth - 80; // Account for button space
+        const cardWidth = 295;
+        const visibleCards = Math.floor(containerWidth / cardWidth);
+        
+        if (track.children.length <= visibleCards) {
+            // Hide navigation buttons if all cards are visible
+            const prevBtn = container.querySelector('.carousel-btn-prev');
+            const nextBtn = container.querySelector('.carousel-btn-next');
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+        }
+    });
+});
+
+// Handle dropdown forms
+document.querySelectorAll('.dropdown-menu form').forEach(form => {
+    form.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+});
+
+// Carousel minimize/expand functionality
+function toggleCarousel(carouselId) {
+    const carousel = document.getElementById(carouselId);
+    const toggleBtn = carouselId === 'hotelsCarousel' ? 
+        document.getElementById('hotelToggleBtn') : 
+        document.getElementById('eventToggleBtn');
+    
+    if (carousel.style.display === 'none') {
+        // Expand
+        carousel.style.display = 'block';
+        toggleBtn.innerHTML = '<i class="fas fa-minus me-1"></i>Minimize';
+        toggleBtn.classList.remove('btn-outline-success');
+        toggleBtn.classList.add('btn-outline-secondary');
+        
+        // Save state
+        localStorage.setItem(carouselId + '_minimized', 'false');
+    } else {
+        // Minimize
+        carousel.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Expand';
+        toggleBtn.classList.remove('btn-outline-secondary');
+        toggleBtn.classList.add('btn-outline-success');
+        
+        // Save state
+        localStorage.setItem(carouselId + '_minimized', 'true');
+    }
+}
+
+// Restore carousel states on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const carousels = ['hotelsCarousel', 'eventsCarousel'];
+    
+    carousels.forEach(carouselId => {
+        const isMinimized = localStorage.getItem(carouselId + '_minimized') === 'true';
+        if (isMinimized) {
+            toggleCarousel(carouselId);
+        }
+    });
+});
+</script>
+{% endblock %}

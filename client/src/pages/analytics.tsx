@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { BarChart3, TrendingUp, DollarSign, Calendar } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { BarChart3, TrendingUp, DollarSign, Calendar, Upload, FileSpreadsheet } from "lucide-react";
 import Navigation from "@/components/layout/navigation";
 import Sidebar from "@/components/layout/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Bar, BarChart } from "recharts";
 import { useState } from "react";
 import { hotelApi } from "@/lib/api";
@@ -14,6 +17,9 @@ import { hotelApi } from "@/lib/api";
 export default function Analytics() {
   const [selectedHotel, setSelectedHotel] = useState<string>("all");
   const [timeRange, setTimeRange] = useState("30d");
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: hotels } = useQuery({
     queryKey: ["/api/hotels"],
@@ -48,6 +54,47 @@ export default function Analytics() {
     revenue: hotel.revenue,
     occupancy: hotel.occupancyRate,
   })) || [];
+
+  // Excel upload mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch('/api/analytics/upload-excel', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Upload successful",
+        description: "Hotel performance data has been imported successfully.",
+      });
+      setIsUploadOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('excel', file);
+      if (selectedHotel !== "all") {
+        formData.append('hotelId', selectedHotel);
+      }
+      uploadMutation.mutate(formData);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -86,6 +133,48 @@ export default function Analytics() {
                   <SelectItem value="1y">1 year</SelectItem>
                 </SelectContent>
               </Select>
+              <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Excel
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upload Hotel Performance Data</DialogTitle>
+                    <DialogDescription>
+                      Upload an Excel file with actual hotel performance data (occupancy, ADR, revenue, etc.)
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center w-full">
+                      <label htmlFor="excel-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <FileSpreadsheet className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
+                          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Excel files (.xlsx, .xls)</p>
+                        </div>
+                        <Input
+                          id="excel-upload"
+                          type="file"
+                          accept=".xlsx,.xls"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          disabled={uploadMutation.isPending}
+                        />
+                      </label>
+                    </div>
+                    {uploadMutation.isPending && (
+                      <div className="text-center text-sm text-gray-500">
+                        Uploading and processing file...
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Button variant="outline">
                 Export Report
               </Button>

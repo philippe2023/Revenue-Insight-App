@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Hotel Actuals - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>
+                    <i class="fas fa-upload me-2"></i>
+                    Upload Hotel Actuals
+                </h2>
+                <p class="text-muted mb-0">Import hotel performance data from Excel or CSV files</p>
+            </div>
+            <a href="{{ url_for('actuals_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-chart-bar me-2"></i>
+                View Dashboard
+            </a>
+        </div>
+
+        <!-- Download Template Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-download me-2"></i>
+                    Step 1: Download Template
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Download the Excel template with the correct format and all hotel codes pre-populated.</p>
+                <a href="{{ url_for('download_template') }}" class="btn btn-primary">
+                    <i class="fas fa-file-excel me-2"></i>
+                    Download Template
+                </a>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <strong>Template includes:</strong> Date, Hotel Code, Revenue TY, Room Nights TY, ADR TY, 
+                        STLY Revenue, STLY Room Nights, STLY ADR, Result LY Revenue, Result LY Room Nights, Result LY ADR
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-upload me-2"></i>
+                    Step 2: Upload Completed File
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="actuals_file" class="form-label">
+                            Select File
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input type="file" 
+                               class="form-control" 
+                               id="actuals_file" 
+                               name="actuals_file" 
+                               accept=".csv,.xlsx,.xls" 
+                               required>
+                        <div class="form-text">
+                            Supported formats: CSV (.csv), Excel (.xlsx, .xls). Maximum file size: 50MB.
+                        </div>
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Tip:</strong> Column order is important - arrange columns as shown in the template. Column names can vary, but the order must match. Date format should be YYYY-MM-DD or MM/DD/YYYY.
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>
+                            Upload File
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Instructions Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Instructions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-check-circle text-success me-1"></i> File Requirements</h6>
+                        <ul class="small">
+                            <li>Use the downloaded template format</li>
+                            <li>Date format: YYYY-MM-DD (e.g., 2025-01-15)</li>
+                            <li>Hotel codes must match existing codes</li>
+                            <li>Numeric fields only (no currency symbols)</li>
+                            <li>Empty cells are allowed</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calculator text-info me-1"></i> Auto-Calculations</h6>
+                        <ul class="small">
+                            <li>Occupancy % = Room Nights ÷ Hotel Inventory</li>
+                            <li>Revenue Impact = Revenue TY - STLY Revenue</li>
+                            <li>Upload timestamp and user tracking</li>
+                            <li>Duplicate records are overwritten</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('actuals_file');
+    const form = fileInput.closest('form');
+    
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            // Check file size (50MB limit)
+            const maxSize = 50 * 1024 * 1024;
+            if (file.size > maxSize) {
+                alert('File is too large. Maximum size is 50MB.');
+                this.value = '';
+                return;
+            }
+            
+            // Update form text to show selected file
+            const formText = this.parentElement.querySelector('.form-text');
+            formText.innerHTML = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        }
+    });
+    
+    form.addEventListener('submit', function() {
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    });
+});
+</script>
+{% endblock %}

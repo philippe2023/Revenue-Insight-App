@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Events Excel - {{ super() }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.upload-hero {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 60px 0;
+    margin-top: -24px;
+    border-radius: 0 0 40px 40px;
+}
+
+[data-bs-theme="dark"] .upload-hero {
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.3) 0%, rgba(52, 152, 219, 0.1) 100%);
+}
+
+.upload-card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.file-drop-area {
+    border: 3px dashed #667eea;
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.file-drop-area:hover {
+    border-color: #764ba2;
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.file-drop-area.dragover {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.btn-custom {
+    border-radius: 50px;
+    padding: 12px 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.template-info {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+    border-left: 4px solid #667eea;
+    border-radius: 0 15px 15px 0;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.breadcrumb-custom {
+    background: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+    content: "→";
+    color: #667eea;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="upload-hero">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-custom">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('manage_events') }}">Manage Events</a></li>
+                <li class="breadcrumb-item active">Upload Events Excel</li>
+            </ol>
+        </nav>
+        
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-upload me-3"></i>
+                    Upload Events Excel
+                </h1>
+                <p class="lead text-muted">
+                    Bulk upload event data using Excel files for faster event management and updates
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('manage_events') }}" class="btn btn-outline-primary btn-custom">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Events
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <!-- Template Information -->
+    <div class="template-info">
+        <h5 class="text-primary mb-3">
+            <i class="fas fa-info-circle me-2"></i>Excel Template Format
+        </h5>
+        <p class="mb-2">Your Excel file must contain the following columns:</p>
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><strong>Event Name</strong> - Full event name (required)</li>
+                    <li><strong>Start Date</strong> - Event start date (required)</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-unstyled">
+                    <li><strong>End Date</strong> - Event end date (required)</li>
+                    <li><strong>City</strong> - Event location city (required)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="fas fa-lightbulb me-2"></i>
+            <strong>Tip:</strong> Date format should be YYYY-MM-DD or MM/DD/YYYY. If an event with the same name, start date, and city exists, it will be updated.
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="card upload-card">
+        <div class="card-body p-5">
+            <h5 class="card-title mb-4">
+                <i class="fas fa-file-excel me-2 text-success"></i>
+                Upload Excel File
+            </h5>
+            
+            <form method="POST" enctype="multipart/form-data" id="upload-form">
+                <div class="file-drop-area mb-4" id="file-drop-area">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                    <h5>Drag and drop your Excel file here</h5>
+                    <p class="text-muted mb-3">or click to select a file</p>
+                    <input type="file" id="file-input" name="file" accept=".xlsx,.xls" style="display: none;" required>
+                    <button type="button" class="btn btn-outline-primary btn-custom" onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-folder-open me-2"></i>Choose File
+                    </button>
+                </div>
+                
+                <div id="file-info" class="alert alert-info" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-file-excel me-2 text-success"></i>
+                        <div class="flex-grow-1">
+                            <strong id="file-name"></strong>
+                            <div class="small text-muted" id="file-size"></div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button type="submit" class="btn btn-success btn-custom me-md-2" id="upload-btn" disabled>
+                        <i class="fas fa-upload me-2"></i>Upload Events
+                    </button>
+                    <a href="{{ url_for('manage_events') }}" class="btn btn-outline-secondary btn-custom">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sample Data Preview -->
+    <div class="card upload-card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-table me-2"></i>Sample Excel Format
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Event Name</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>City</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tech Conference 2025</td>
+                            <td>2025-03-15</td>
+                            <td>2025-03-17</td>
+                            <td>San Francisco</td>
+                        </tr>
+                        <tr>
+                            <td>Music Festival</td>
+                            <td>2025-06-10</td>
+                            <td>2025-06-12</td>
+                            <td>Austin</td>
+                        </tr>
+                        <tr>
+                            <td>Business Summit</td>
+                            <td>2025-09-05</td>
+                            <td>2025-09-07</td>
+                            <td>New York</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file-input');
+    const fileDropArea = document.getElementById('file-drop-area');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const uploadBtn = document.getElementById('upload-btn');
+
+    // File input change handler
+    fileInput.addEventListener('change', function() {
+        if (this.files[0]) {
+            showFileInfo(this.files[0]);
+        }
+    });
+
+    // Drag and drop handlers
+    fileDropArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+
+    fileDropArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+    });
+
+    fileDropArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        
+        if (e.dataTransfer.files[0]) {
+            fileInput.files = e.dataTransfer.files;
+            showFileInfo(e.dataTransfer.files[0]);
+        }
+    });
+
+    function showFileInfo(file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = `Size: ${(file.size / 1024).toFixed(1)} KB`;
+        fileInfo.style.display = 'block';
+        uploadBtn.disabled = false;
+    }
+
+    window.clearFile = function() {
+        fileInput.value = '';
+        fileInfo.style.display = 'none';
+        uploadBtn.disabled = true;
+    };
+});
+</script>
+{% endblock %}
