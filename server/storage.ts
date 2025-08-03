@@ -202,7 +202,26 @@ export class DatabaseStorage implements IStorage {
       })
       .from(hotels)
       .leftJoin(hotelActuals, eq(hotels.id, hotelActuals.hotelId))
-      .groupBy(hotels.id)
+      .groupBy(
+        hotels.id,
+        hotels.name,
+        hotels.description,
+        hotels.address,
+        hotels.city,
+        hotels.state,
+        hotels.country,
+        hotels.postalCode,
+        hotels.phone,
+        hotels.email,
+        hotels.website,
+        hotels.starRating,
+        hotels.totalRooms,
+        hotels.imageUrl,
+        hotels.status,
+        hotels.ownerId,
+        hotels.createdAt,
+        hotels.updatedAt
+      )
       .orderBy(desc(sql`COALESCE(SUM(${hotelActuals.revenue}), 0)`))
       .limit(limit);
 

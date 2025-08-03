@@ -27,29 +27,42 @@ export default function Analytics() {
     retry: false,
   });
 
-  const { data: kpis } = useQuery({
+  const { data: kpis } = useQuery<{
+    totalRevenue: number;
+    totalBookings: number;
+    avgOccupancyRate: number;
+    activeHotels: number;
+    upcomingEvents: number;
+  }>({
     queryKey: ["/api/dashboard/kpis"],
     retry: false,
   });
 
-  const { data: revenueAnalytics } = useQuery({
+  const { data: revenueAnalytics } = useQuery<{
+    monthly: Array<{ month: string; revenue: number; bookings: number }>;
+  }>({
     queryKey: ["/api/dashboard/revenue-analytics", selectedHotel === "all" ? undefined : selectedHotel],
     retry: false,
   });
 
-  const { data: topPerformers } = useQuery({
+  const { data: topPerformers } = useQuery<Array<{
+    id: string;
+    name: string;
+    revenue: number;
+    occupancyRate: number;
+  }>>({
     queryKey: ["/api/dashboard/top-performers", { limit: 10 }],
     retry: false,
   });
 
   // Transform data for charts
-  const chartData = revenueAnalytics?.map((item: any) => ({
+  const chartData = revenueAnalytics?.monthly?.map((item) => ({
     month: new Date(item.month + '-01').toLocaleDateString('en-US', { month: 'short' }),
     revenue: item.revenue,
     occupancy: Math.random() * 100, // Placeholder - would come from actual data
   })) || [];
 
-  const performanceData = topPerformers?.map((hotel: any) => ({
+  const performanceData = topPerformers?.map((hotel) => ({
     name: hotel.name.length > 15 ? hotel.name.substring(0, 15) + '...' : hotel.name,
     revenue: hotel.revenue,
     occupancy: hotel.occupancyRate,
