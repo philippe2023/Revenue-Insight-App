@@ -16,7 +16,7 @@ export default function Dashboard() {
       <Navigation />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
           {/* Dashboard Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">

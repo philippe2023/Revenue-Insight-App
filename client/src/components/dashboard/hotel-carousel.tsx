@@ -6,10 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, Plus, Filter } from "lucide-react";
 import { useRef } from "react";
 import { useLocation } from "wouter";
+import { hotelApi } from "@/lib/api";
 
 export default function HotelCarousel() {
   const { data: hotels, isLoading } = useQuery({
     queryKey: ["/api/hotels"],
+    queryFn: hotelApi.getAll,
     retry: false,
   });
 
@@ -70,10 +72,10 @@ export default function HotelCarousel() {
         <div className="relative">
           <div 
             ref={scrollRef}
-            className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
+            className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4 max-w-full"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {hotels?.map((hotel) => (
+            {hotels?.map((hotel: any) => (
               <div 
                 key={hotel.id}
                 className="flex-shrink-0 w-72 bg-slate-50 dark:bg-slate-700/50 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
