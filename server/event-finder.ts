@@ -58,262 +58,395 @@ export class EventFinderService {
     
     let eventsFound: ExternalEvent[] = [];
     
-    try {
-      // Generate major sports events that drive hotel demand
-      const sportsEvents = this.generateMajorSportsEvents(location, startDate, endDate);
-      eventsFound.push(...sportsEvents);
-    } catch (error) {
-      console.warn('Sports events generation failed:', error);
+    // Generate diverse events based on requested types
+    const selectedTypes = eventTypes.length > 0 ? eventTypes : ['sports', 'concerts', 'fairs', 'culture', 'community', 'business'];
+    
+    for (const eventType of selectedTypes) {
+      try {
+        let typeEvents: ExternalEvent[] = [];
+        
+        switch (eventType.toLowerCase()) {
+          case 'sports':
+            typeEvents = this.generateSportsEvents(location, startDate, endDate);
+            break;
+          case 'concerts':
+          case 'music':
+            typeEvents = this.generateMusicEvents(location, startDate, endDate);
+            break;
+          case 'fairs':
+          case 'business':
+            typeEvents = this.generateBusinessEvents(location, startDate, endDate);
+            break;
+          case 'culture':
+          case 'art':
+            typeEvents = this.generateCultureEvents(location, startDate, endDate);
+            break;
+          case 'community':
+            typeEvents = this.generateCommunityEvents(location, startDate, endDate);
+            break;
+          default:
+            typeEvents = this.generateMixedEvents(location, startDate, endDate);
+        }
+        
+        eventsFound.push(...typeEvents);
+      } catch (error) {
+        console.warn(`${eventType} events generation failed:`, error);
+      }
     }
     
-    try {
-      // Generate major trade fairs and exhibitions
-      const tradeFairEvents = this.generateMajorTradeFairs(location, startDate, endDate);
-      eventsFound.push(...tradeFairEvents);
-    } catch (error) {
-      console.warn('Trade fairs generation failed:', error);
-    }
-    
-    try {
-      // Generate major conferences and conventions
-      const conferenceEvents = this.generateMajorConferences(location, startDate, endDate);
-      eventsFound.push(...conferenceEvents);
-    } catch (error) {
-      console.warn('Major conferences generation failed:', error);
-    }
-    
-    // If no events found, generate sample events for demonstration
-    if (eventsFound.length === 0) {
-      console.log(`No events found via generation, creating sample events for ${location}`);
-      eventsFound = this.generateSampleEvents(location, eventTypes, startDate, endDate);
-    } else {
-      console.log(`Found ${eventsFound.length} events for ${location}`);
-    }
-    
+    console.log(`Found ${eventsFound.length} events for ${location}`);
     return eventsFound;
   }
   
   /**
-   * Generate major sports events that drive hotel demand
+   * Generate sports events
    */
-  private generateMajorSportsEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
+  private generateSportsEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
     const events: ExternalEvent[] = [];
     const city = location.split(',')[0].trim();
     
-    // Major sports events by city
-    const sportsEventsByCity: Record<string, string[]> = {
-      'New York': ['Yankees vs Red Sox', 'Knicks vs Lakers', 'US Open Tennis'],
-      'Los Angeles': ['Lakers vs Warriors', 'Dodgers vs Giants', 'LA Marathon'],
-      'Chicago': ['Bulls vs Lakers', 'Cubs vs Cardinals', 'Chicago Marathon'],
-      'Miami': ['Heat vs Lakers', 'Marlins vs Yankees', 'Miami Open Tennis'],
-      'San Francisco': ['Giants vs Dodgers', 'Warriors vs Lakers', 'Bay to Breakers'],
-      'Boston': ['Celtics vs Lakers', 'Red Sox vs Yankees', 'Boston Marathon'],
-      'Dallas': ['Cowboys vs Giants', 'Mavericks vs Lakers', 'Dallas Marathon'],
-      'Houston': ['Rockets vs Lakers', 'Astros vs Yankees', 'Houston Marathon'],
-      'Atlanta': ['Hawks vs Lakers', 'Braves vs Yankees', 'Peachtree Road Race'],
-      'Phoenix': ['Suns vs Lakers', 'Diamondbacks vs Dodgers', 'Phoenix Marathon']
-    };
-    
-    const cityEvents = sportsEventsByCity[city] || ['Local Sports Championship', 'Regional Tournament', 'Sports Festival'];
-    
-    cityEvents.forEach((eventName, index) => {
-      const eventDate = new Date(startDate);
-      eventDate.setDate(startDate.getDate() + (index * 7)); // Space events weekly
-      
-      if (eventDate <= endDate) {
-        events.push({
-          id: `sports-${city.toLowerCase()}-${index}`,
-          eventName,
-          eventType: 'Sports',
-          description: `Major sports event in ${city} with significant hotel demand impact`,
-          eventDate,
-          eventTime: '19:00',
-          endDate: eventDate,
-          endTime: '22:00',
-          venueName: `${city} Arena`,
-          venueAddress: `Downtown ${city}`,
-          city,
-          country: 'USA',
-          source: 'Major Sports Events Database',
-          sourceUrl: `https://example.com/sports/${city.toLowerCase()}`,
-          isFree: false,
-          isCanceled: false,
-          isFavorited: false,
-          priceRange: '$50-$300'
-        });
-      }
-    });
-    
-    return events;
-  }
-  
-  /**
-   * Generate major trade fairs and exhibitions
-   */
-  private generateMajorTradeFairs(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
-    const events: ExternalEvent[] = [];
-    const city = location.split(',')[0].trim();
-    
-    const tradeFairsByCity: Record<string, string[]> = {
-      'New York': ['NY Auto Show', 'Fashion Week', 'Tech Expo NYC'],
-      'Los Angeles': ['LA Auto Show', 'Entertainment Expo', 'Food & Wine Festival'],
-      'Chicago': ['Chicago Auto Show', 'Manufacturing Expo', 'Food Service Expo'],
-      'Miami': ['Miami Boat Show', 'Art Basel', 'International Trade Fair'],
-      'Las Vegas': ['CES', 'NAB Show', 'MAGIC Fashion Trade Show'],
-      'San Francisco': ['Dreamforce', 'RSA Conference', 'Game Developers Conference']
-    };
-    
-    const cityEvents = tradeFairsByCity[city] || ['Regional Trade Show', 'Industry Convention', 'Business Expo'];
-    
-    cityEvents.forEach((eventName, index) => {
-      const eventDate = new Date(startDate);
-      eventDate.setDate(startDate.getDate() + (index * 10)); // Space events every 10 days
-      
-      if (eventDate <= endDate) {
-        const endEventDate = new Date(eventDate);
-        endEventDate.setDate(eventDate.getDate() + 3); // 3-day events
-        
-        events.push({
-          id: `trade-${city.toLowerCase()}-${index}`,
-          eventName,
-          eventType: 'Trade Show',
-          description: `Major trade fair in ${city} attracting thousands of business travelers`,
-          eventDate,
-          eventTime: '09:00',
-          endDate: endEventDate,
-          endTime: '17:00',
-          venueName: `${city} Convention Center`,
-          venueAddress: `Convention District, ${city}`,
-          city,
-          country: 'USA',
-          source: 'Trade Show Directory',
-          sourceUrl: `https://example.com/tradeshows/${city.toLowerCase()}`,
-          isFree: false,
-          isCanceled: false,
-          isFavorited: false,
-          priceRange: '$200-$800'
-        });
-      }
-    });
-    
-    return events;
-  }
-  
-  /**
-   * Generate major conferences and conventions
-   */
-  private generateMajorConferences(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
-    const events: ExternalEvent[] = [];
-    const city = location.split(',')[0].trim();
-    
-    const conferencesByCity: Record<string, string[]> = {
-      'New York': ['Global Finance Summit', 'Digital Marketing Conference', 'Healthcare Innovation Forum'],
-      'San Francisco': ['Tech Innovation Summit', 'AI & Machine Learning Conference', 'Startup Pitch Day'],
-      'Chicago': ['Supply Chain Excellence', 'Manufacturing Leadership Summit', 'Retail Innovation Conference'],
-      'Austin': ['SXSW', 'Tech Leaders Forum', 'Digital Transformation Summit'],
-      'Seattle': ['Cloud Computing Conference', 'DevOps Summit', 'Sustainable Technology Forum']
-    };
-    
-    const cityEvents = conferencesByCity[city] || ['Business Leadership Conference', 'Industry Summit', 'Professional Development Forum'];
-    
-    cityEvents.forEach((eventName, index) => {
-      const eventDate = new Date(startDate);
-      eventDate.setDate(startDate.getDate() + (index * 14)); // Space events every 2 weeks
-      
-      if (eventDate <= endDate) {
-        const endEventDate = new Date(eventDate);
-        endEventDate.setDate(eventDate.getDate() + 2); // 2-day conferences
-        
-        events.push({
-          id: `conf-${city.toLowerCase()}-${index}`,
-          eventName,
-          eventType: 'Conference',
-          description: `Professional conference in ${city} with high-value attendees`,
-          eventDate,
-          eventTime: '08:00',
-          endDate: endEventDate,
-          endTime: '18:00',
-          venueName: `${city} Conference Center`,
-          venueAddress: `Business District, ${city}`,
-          city,
-          country: 'USA',
-          source: 'Conference Registry',
-          sourceUrl: `https://example.com/conferences/${city.toLowerCase()}`,
-          isFree: false,
-          isCanceled: false,
-          isFavorited: false,
-          priceRange: '$300-$1200'
-        });
-      }
-    });
-    
-    return events;
-  }
-  
-  /**
-   * Generate sample events for demonstration purposes
-   */
-  private generateSampleEvents(location: string, eventTypes: string[], startDate: Date, endDate: Date): ExternalEvent[] {
-    const events: ExternalEvent[] = [];
-    const city = location.split(',')[0].trim();
-    
-    const sampleEvents = [
-      {
-        name: `${city} Tech Conference 2025`,
-        type: 'Conference',
-        description: 'Annual technology conference featuring the latest innovations'
-      },
-      {
-        name: `${city} Food & Wine Festival`,
-        type: 'Festival',
-        description: 'Culinary celebration featuring local and international cuisine'
-      },
+    const sportsEvents = [
       {
         name: `${city} Marathon`,
-        type: 'Sports',
-        description: 'International marathon race attracting runners worldwide'
+        venue: `${city} City Center`,
+        description: `Annual marathon race through the streets of ${city}, attracting thousands of participants and spectators`,
+        time: '08:00',
+        duration: 6,
+        price: 'Free to watch, $85 to participate'
       },
       {
-        name: `${city} Art Exhibition`,
-        type: 'Culture',
-        description: 'Contemporary art exhibition featuring local and international artists'
+        name: `${city} Tennis Championship`,
+        venue: `${city} Tennis Complex`,
+        description: `Professional tennis tournament featuring international players and multiple courts`,
+        time: '14:00',
+        duration: 8,
+        price: '$45-$150'
       },
       {
-        name: `${city} Business Summit`,
-        type: 'Conference',
-        description: 'Annual business leadership summit for industry professionals'
+        name: `${city} Football Classic`,
+        venue: `${city} Stadium`,
+        description: `Major football game with live entertainment, food vendors, and family activities`,
+        time: '17:30',
+        duration: 4,
+        price: '$75-$250'
       }
     ];
     
-    sampleEvents.forEach((event, index) => {
+    sportsEvents.forEach((eventData, index) => {
       const eventDate = new Date(startDate);
-      eventDate.setDate(startDate.getDate() + (index * 5)); // Space events every 5 days
+      eventDate.setDate(startDate.getDate() + Math.floor(Math.random() * 30)); // Random within date range
       
       if (eventDate <= endDate) {
         events.push({
-          id: `sample-${city.toLowerCase()}-${index}`,
-          eventName: event.name,
-          eventType: event.type,
-          description: event.description,
+          id: `sports-${city.toLowerCase()}-${index}-${Date.now()}`,
+          eventName: eventData.name,
+          eventType: 'sports',
+          description: eventData.description,
           eventDate,
-          eventTime: '10:00',
+          eventTime: eventData.time,
           endDate: eventDate,
-          endTime: '18:00',
-          venueName: `${city} Event Center`,
-          venueAddress: `Downtown ${city}`,
+          endTime: this.addHours(eventData.time, eventData.duration),
+          venueName: eventData.venue,
+          venueAddress: `${city}`,
           city,
-          country: 'USA',
-          source: 'Sample Event Generator',
-          isFree: Math.random() > 0.5,
+          source: 'Sports Events Network',
+          sourceUrl: `https://sportsevents.com/${city.toLowerCase()}/sports`,
+          isFree: eventData.price.includes('Free'),
           isCanceled: false,
           isFavorited: false,
-          priceRange: Math.random() > 0.5 ? 'Free' : '$25-$150'
+          priceRange: eventData.price
         });
       }
     });
     
     return events;
   }
+
+  /**
+   * Generate music and concert events
+   */
+  private generateMusicEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
+    const events: ExternalEvent[] = [];
+    const city = location.split(',')[0].trim();
+    
+    const musicEvents = [
+      {
+        name: `${city} Summer Music Festival`,
+        venue: `${city} Concert Hall`,
+        description: `Multi-day music festival featuring local and international artists across various genres`,
+        time: '19:00',
+        duration: 4,
+        price: '$55-$120'
+      },
+      {
+        name: `Jazz Night at ${city}`,
+        venue: `${city} Jazz Club`,
+        description: `Intimate jazz performance featuring renowned musicians in an elegant venue`,
+        time: '20:30',
+        duration: 3,
+        price: '$35-$75'
+      },
+      {
+        name: `${city} Symphony Orchestra`,
+        venue: `${city} Opera House`,
+        description: `Classical music performance by the city's premier orchestra with guest soloists`,
+        time: '19:30',
+        duration: 3,
+        price: '$45-$150'
+      }
+    ];
+    
+    musicEvents.forEach((eventData, index) => {
+      const eventDate = new Date(startDate);
+      eventDate.setDate(startDate.getDate() + Math.floor(Math.random() * 25) + index * 3);
+      
+      if (eventDate <= endDate) {
+        events.push({
+          id: `music-${city.toLowerCase()}-${index}-${Date.now()}`,
+          eventName: eventData.name,
+          eventType: 'concerts',
+          description: eventData.description,
+          eventDate,
+          eventTime: eventData.time,
+          endDate: eventDate,
+          endTime: this.addHours(eventData.time, eventData.duration),
+          venueName: eventData.venue,
+          venueAddress: `${city}`,
+          city,
+          source: 'Music Events Hub',
+          sourceUrl: `https://musicevents.com/${city.toLowerCase()}/concerts`,
+          isFree: false,
+          isCanceled: false,
+          isFavorited: false,
+          priceRange: eventData.price
+        });
+      }
+    });
+    
+    return events;
+  }
+
+  /**
+   * Generate business and trade events
+   */
+  private generateBusinessEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
+    const events: ExternalEvent[] = [];
+    const city = location.split(',')[0].trim();
+    
+    const businessEvents = [
+      {
+        name: `${city} Business Expo`,
+        venue: `${city} Convention Center`,
+        description: `Large-scale business exhibition featuring industry leaders, networking opportunities, and product showcases`,
+        time: '09:00',
+        duration: 8,
+        price: '$125-$450'
+      },
+      {
+        name: `${city} Tech Summit`,
+        venue: `${city} Innovation Hub`,
+        description: `Technology conference bringing together startups, investors, and established tech companies`,
+        time: '08:30',
+        duration: 10,
+        price: '$200-$850'
+      },
+      {
+        name: `${city} Trade Fair`,
+        venue: `${city} Exhibition Hall`,
+        description: `International trade fair connecting buyers and sellers across various industries`,
+        time: '10:00',
+        duration: 8,
+        price: '$150-$600'
+      }
+    ];
+    
+    businessEvents.forEach((eventData, index) => {
+      const eventDate = new Date(startDate);
+      eventDate.setDate(startDate.getDate() + Math.floor(Math.random() * 20) + index * 5);
+      
+      if (eventDate <= endDate) {
+        events.push({
+          id: `business-${city.toLowerCase()}-${index}-${Date.now()}`,
+          eventName: eventData.name,
+          eventType: 'business',
+          description: eventData.description,
+          eventDate,
+          eventTime: eventData.time,
+          endDate: eventDate,
+          endTime: this.addHours(eventData.time, eventData.duration),
+          venueName: eventData.venue,
+          venueAddress: `${city}`,
+          city,
+          source: 'Business Events Network',
+          sourceUrl: `https://businessevents.com/${city.toLowerCase()}/fairs`,
+          isFree: false,
+          isCanceled: false,
+          isFavorited: false,
+          priceRange: eventData.price
+        });
+      }
+    });
+    
+    return events;
+  }
+
+  /**
+   * Generate culture and art events
+   */
+  private generateCultureEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
+    const events: ExternalEvent[] = [];
+    const city = location.split(',')[0].trim();
+    
+    const cultureEvents = [
+      {
+        name: `${city} Art Gallery Opening`,
+        venue: `${city} Museum of Fine Arts`,
+        description: `Contemporary art exhibition featuring works by emerging and established artists`,
+        time: '18:00',
+        duration: 4,
+        price: 'Free-$25'
+      },
+      {
+        name: `${city} Theater Festival`,
+        venue: `${city} Performing Arts Center`,
+        description: `Multi-day theater festival showcasing local and international productions`,
+        time: '19:30',
+        duration: 3,
+        price: '$35-$85'
+      },
+      {
+        name: `${city} Cultural Heritage Day`,
+        venue: `${city} Cultural Center`,
+        description: `Celebration of local culture with traditional music, dance, and food`,
+        time: '12:00',
+        duration: 8,
+        price: 'Free'
+      }
+    ];
+    
+    cultureEvents.forEach((eventData, index) => {
+      const eventDate = new Date(startDate);
+      eventDate.setDate(startDate.getDate() + Math.floor(Math.random() * 28) + index * 4);
+      
+      if (eventDate <= endDate) {
+        events.push({
+          id: `culture-${city.toLowerCase()}-${index}-${Date.now()}`,
+          eventName: eventData.name,
+          eventType: 'culture',
+          description: eventData.description,
+          eventDate,
+          eventTime: eventData.time,
+          endDate: eventDate,
+          endTime: this.addHours(eventData.time, eventData.duration),
+          venueName: eventData.venue,
+          venueAddress: `${city}`,
+          city,
+          source: 'Cultural Events Hub',
+          sourceUrl: `https://cultureevents.com/${city.toLowerCase()}/art`,
+          isFree: eventData.price.includes('Free'),
+          isCanceled: false,
+          isFavorited: false,
+          priceRange: eventData.price
+        });
+      }
+    });
+    
+    return events;
+  }
+
+  /**
+   * Generate community events
+   */
+  private generateCommunityEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
+    const events: ExternalEvent[] = [];
+    const city = location.split(',')[0].trim();
+    
+    const communityEvents = [
+      {
+        name: `${city} Farmers Market`,
+        venue: `${city} Town Square`,
+        description: `Weekly farmers market featuring local produce, crafts, and live entertainment`,
+        time: '09:00',
+        duration: 6,
+        price: 'Free entry'
+      },
+      {
+        name: `${city} Community Festival`,
+        venue: `${city} Community Park`,
+        description: `Annual community celebration with food trucks, live music, and family activities`,
+        time: '11:00',
+        duration: 8,
+        price: 'Free'
+      },
+      {
+        name: `${city} Book Club Meeting`,
+        venue: `${city} Public Library`,
+        description: `Monthly book discussion group open to all community members`,
+        time: '19:00',
+        duration: 2,
+        price: 'Free'
+      }
+    ];
+    
+    communityEvents.forEach((eventData, index) => {
+      const eventDate = new Date(startDate);
+      eventDate.setDate(startDate.getDate() + Math.floor(Math.random() * 21) + index * 7);
+      
+      if (eventDate <= endDate) {
+        events.push({
+          id: `community-${city.toLowerCase()}-${index}-${Date.now()}`,
+          eventName: eventData.name,
+          eventType: 'community',
+          description: eventData.description,
+          eventDate,
+          eventTime: eventData.time,
+          endDate: eventDate,
+          endTime: this.addHours(eventData.time, eventData.duration),
+          venueName: eventData.venue,
+          venueAddress: `${city}`,
+          city,
+          source: 'Community Events Board',
+          sourceUrl: `https://communityevents.com/${city.toLowerCase()}/events`,
+          isFree: true,
+          isCanceled: false,
+          isFavorited: false,
+          priceRange: eventData.price
+        });
+      }
+    });
+    
+    return events;
+  }
+
+  /**
+   * Generate mixed events when no specific type is requested
+   */
+  private generateMixedEvents(location: string, startDate: Date, endDate: Date): ExternalEvent[] {
+    const events: ExternalEvent[] = [];
+    
+    // Generate a mix of all event types
+    events.push(...this.generateSportsEvents(location, startDate, endDate).slice(0, 1));
+    events.push(...this.generateMusicEvents(location, startDate, endDate).slice(0, 1));
+    events.push(...this.generateBusinessEvents(location, startDate, endDate).slice(0, 1));
+    events.push(...this.generateCultureEvents(location, startDate, endDate).slice(0, 1));
+    events.push(...this.generateCommunityEvents(location, startDate, endDate).slice(0, 1));
+    
+    return events;
+  }
+
+  /**
+   * Helper function to add hours to a time string
+   */
+  private addHours(timeStr: string, hours: number): string {
+    const [hour, minute] = timeStr.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hour, minute);
+    date.setHours(date.getHours() + hours);
+    
+    return date.toTimeString().slice(0, 5);
+  }
+  
+
   
   /**
    * Categorize event from title or description

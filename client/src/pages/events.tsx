@@ -176,30 +176,32 @@ export default function Events() {
   };
 
   // Handle importing event to internal system
-  const handleImportEvent = async (event: any) => {
+  const handleImportEvent = async (externalEvent: any) => {
     try {
+      // Map external event data to match the database schema
       const eventData = {
-        name: event.event_name || event.name,
-        description: event.description || 'Imported from external event search',
-        date: event.event_date || new Date().toISOString().split('T')[0],
-        time: event.event_time || '12:00',
-        location: event.venue_name || searchCity,
-        city: searchCity,
-        category: event.event_type || 'Other',
-        expectedAttendees: event.expected_attendees || 100,
-        impactLevel: 'medium',
-        externalUrl: event.source_url
+        name: externalEvent.eventName || externalEvent.name || 'Imported Event',
+        description: externalEvent.description || 'Imported from external event search',
+        category: externalEvent.eventType || 'community',
+        startDate: externalEvent.eventDate ? new Date(externalEvent.eventDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        endDate: externalEvent.endDate ? new Date(externalEvent.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        location: externalEvent.venueAddress || externalEvent.venueName || searchCity,
+        city: externalEvent.city || searchCity,
+        expectedAttendees: externalEvent.expectedAttendees ? parseInt(externalEvent.expectedAttendees) : null,
+        impactRadius: 5.0, // Default 5km radius
+        sourceUrl: externalEvent.sourceUrl || null
       };
 
       await createMutation.mutateAsync(eventData);
       toast({
-        title: "Event Imported",
+        title: "Event Imported Successfully",
         description: `"${eventData.name}" has been added to your events.`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Import error:', error);
       toast({
         title: "Import Failed",
-        description: "Failed to import event. Please try again.",
+        description: error?.message || "Failed to import event. Please check the event data and try again.",
         variant: "destructive",
       });
     }
