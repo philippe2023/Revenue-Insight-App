@@ -313,7 +313,16 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
 
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = typeof events.$inferInsert;
-export const insertEventSchema = createInsertSchema(events).omit({
+export const insertEventSchema = createInsertSchema(events, {
+  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Please enter a valid start date",
+  }),
+  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Please enter a valid end date",
+  }),
+  expectedAttendees: z.coerce.number().int().positive().optional().nullable(),
+  impactRadius: z.coerce.number().positive().optional().nullable(),
+}).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

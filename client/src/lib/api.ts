@@ -33,6 +33,10 @@ export const eventApi = {
     if (endDate) params.append('endDate', endDate);
     return fetch(`/api/events/search?${params}`, { credentials: 'include' }).then(res => res.json());
   },
+  externalSearch: async (data: { location: string; eventTypes?: string[]; startDate: string; endDate: string; searchName?: string }) => {
+    const response = await apiRequest('POST', '/api/events/external-search', data);
+    return response.json();
+  },
   create: async (data: any) => {
     const response = await apiRequest('POST', '/api/events', data);
     queryClient.invalidateQueries({ queryKey: ['/api/events'] });

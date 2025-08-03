@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - {{ super() }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.hero-profile {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 60px 0;
+    margin-top: -24px;
+    border-radius: 0 0 40px 40px;
+}
+
+[data-bs-theme="dark"] .hero-profile {
+    background: linear-gradient(135deg, rgba(44, 62, 80, 0.3) 0%, rgba(52, 152, 219, 0.1) 100%);
+}
+
+.profile-card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-top: -40px;
+}
+
+.breadcrumb-custom {
+    background: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+    content: "→";
+    color: #667eea;
+    font-weight: bold;
+}
+
+.btn-custom {
+    border-radius: 50px;
+    padding: 12px 30px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.form-control {
+    border-radius: 15px;
+    border: 2px solid #e9ecef;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--bs-primary);
+    margin-bottom: 8px;
+}
+
+.avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0 auto 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-profile">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-custom">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('my_profile') }}">My Profile</a></li>
+                <li class="breadcrumb-item active">Edit Profile</li>
+            </ol>
+        </nav>
+        
+        <div class="text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-user-edit me-3"></i>
+                Edit Profile
+            </h1>
+            <p class="lead text-muted">
+                Update your personal information and preferences
+            </p>
+        </div>
+    </div>
+</section>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card profile-card">
+                <div class="card-body p-5">
+                    <!-- Avatar Section -->
+                    <div class="text-center mb-4">
+                        <div class="avatar-placeholder">
+                            {{ (user.full_name or user.username)[0].upper() }}
+                        </div>
+                        <h5>{{ user.get_display_name() }}</h5>
+                        <p class="text-muted">@{{ user.username }}</p>
+                    </div>
+
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="full_name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       value="{{ user.full_name or '' }}" placeholder="Enter your full name">
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email or '' }}" placeholder="your.email@company.com">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="department" class="form-label">Department</label>
+                                <input type="text" class="form-control" id="department" name="department" 
+                                       value="{{ user.department or '' }}" placeholder="e.g., Revenue Management">
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label for="role" class="form-label">Role/Title</label>
+                                <input type="text" class="form-control" id="role" name="role" 
+                                       value="{{ user.role or '' }}" placeholder="e.g., Revenue Manager">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   value="{{ user.phone or '' }}" placeholder="+1 (555) 123-4567">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3" 
+                                      placeholder="Tell us about yourself...">{{ user.bio or '' }}</textarea>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3">
+                            <i class="fas fa-cog me-2"></i>
+                            Preferences
+                        </h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="theme_preference" class="form-label">Theme Preference</label>
+                                <select class="form-control" id="theme_preference" name="theme_preference">
+                                    <option value="auto" {{ 'selected' if user.theme_preference == 'auto' else '' }}>Auto (System)</option>
+                                    <option value="light" {{ 'selected' if user.theme_preference == 'light' else '' }}>Light Mode</option>
+                                    <option value="dark" {{ 'selected' if user.theme_preference == 'dark' else '' }}>Dark Mode</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="email_notifications" 
+                                           name="email_notifications" {{ 'checked' if user.email_notifications else '' }}>
+                                    <label class="form-check-label" for="email_notifications">
+                                        Email Notifications
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                            <a href="{{ url_for('my_profile') }}" class="btn btn-outline-secondary btn-custom">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-custom">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                        </div>
+
+                        <hr class="my-5">
+
+                        <div class="text-center">
+                            <h6 class="text-danger mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Danger Zone
+                            </h6>
+                            <p class="text-muted mb-3">
+                                Deleting your profile will remove all your personal information. Your forecast data will remain.
+                            </p>
+                            <form method="POST" action="{{ url_for('delete_profile') }}" 
+                                  onsubmit="return confirm('Are you sure you want to delete your profile? Your personal information will be removed but forecast data will be preserved for data integrity. This action cannot be undone.')">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash me-2"></i>Delete Profile
+                                </button>
+                            </form>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

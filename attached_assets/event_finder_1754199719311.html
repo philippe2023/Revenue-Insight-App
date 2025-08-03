@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}Event Finder{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="bg-gradient-primary text-white rounded-3 p-5 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="display-4 fw-bold mb-3">
+                            <i class="fas fa-search me-3"></i>Event Finder
+                        </h1>
+                        <p class="lead mb-0">
+                            Discover upcoming events in any location. Search for sports, concerts, fairs, cultural activities, and more. Export your results to Excel for easy analysis.
+                        </p>
+                    </div>
+                    <div class="col-lg-4 text-center">
+                        <i class="fas fa-calendar-alt fa-6x opacity-25"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-filter me-2"></i>Search for Events
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('event_finder_search') }}">
+                        <!-- Location Input -->
+                        <div class="mb-4">
+                            <label for="location" class="form-label fw-bold">
+                                <i class="fas fa-map-marker-alt me-2"></i>Location
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="location" 
+                                   name="location" 
+                                   placeholder="Enter city, postal code, or address (e.g., Düsseldorf, Germany)" 
+                                   required>
+                            <div class="form-text">Enter a city name, postal code, or exact address</div>
+                        </div>
+
+                        <!-- Event Types -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-tags me-2"></i>Event Types
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="event_types" value="sports" id="sports">
+                                        <label class="form-check-label" for="sports">
+                                            <i class="fas fa-football-ball me-2"></i>Sports
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="event_types" value="concerts" id="concerts">
+                                        <label class="form-check-label" for="concerts">
+                                            <i class="fas fa-music me-2"></i>Concerts & Festivals
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="event_types" value="fairs" id="fairs">
+                                        <label class="form-check-label" for="fairs">
+                                            <i class="fas fa-store me-2"></i>Fairs & Expos
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="event_types" value="culture" id="culture">
+                                        <label class="form-check-label" for="culture">
+                                            <i class="fas fa-palette me-2"></i>Art & Culture
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="event_types" value="community" id="community">
+                                        <label class="form-check-label" for="community">
+                                            <i class="fas fa-users me-2"></i>Community Events
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text">Select one or more event types (leave blank for all types)</div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-day me-2"></i>Start Date
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="start_date" 
+                                       name="start_date" 
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label fw-bold">
+                                    <i class="fas fa-calendar-day me-2"></i>End Date
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="end_date" 
+                                       name="end_date" 
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Quick Date Options -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Quick Date Options</label>
+                            <div class="btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary me-2" onclick="setDateRange('today')">Today</button>
+                                <button type="button" class="btn btn-outline-secondary me-2" onclick="setDateRange('weekend')">This Weekend</button>
+                                <button type="button" class="btn btn-outline-secondary me-2" onclick="setDateRange('week')">Next 7 Days</button>
+                                <button type="button" class="btn btn-outline-secondary me-2" onclick="setDateRange('month')">Next 30 Days</button>
+                            </div>
+                        </div>
+
+                        <!-- Search Name -->
+                        <div class="mb-4">
+                            <label for="search_name" class="form-label fw-bold">
+                                <i class="fas fa-bookmark me-2"></i>Search Name (Optional)
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="search_name" 
+                                   name="search_name" 
+                                   placeholder="Give this search a name for easy reference">
+                            <div class="form-text">Optional: Name your search to find it easily later</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-search me-2"></i>Find Events
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Searches -->
+    {% if recent_searches %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Searches
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for search in recent_searches %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 border-left-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        {% if search.search_name %}
+                                            {{ search.search_name }}
+                                        {% else %}
+                                            {{ search.location }}
+                                        {% endif %}
+                                    </h6>
+                                    <p class="card-text small text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ search.location }}<br>
+                                        <i class="fas fa-calendar me-1"></i>{{ search.start_date.strftime('%m/%d/%Y') }} - {{ search.end_date.strftime('%m/%d/%Y') }}<br>
+                                        <i class="fas fa-list me-1"></i>{{ search.results_count }} events found
+                                    </p>
+                                    <div class="btn-group-sm">
+                                        <a href="{{ url_for('event_search_results', search_id=search.id) }}" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>View Results
+                                        </a>
+                                        <a href="{{ url_for('rerun_event_search', search_id=search.id) }}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-redo me-1"></i>Rerun
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('event_search_history') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>View All Search History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- API Notice -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle me-2"></i>API Configuration</h6>
+                <p class="mb-0">
+                    To get the best results, make sure API keys are configured for Eventbrite, Ticketmaster, and other event sources. 
+                    Contact your administrator if you need help setting up API access.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setDateRange(range) {
+    const today = new Date();
+    const startInput = document.getElementById('start_date');
+    const endInput = document.getElementById('end_date');
+    
+    let startDate = new Date(today);
+    let endDate = new Date(today);
+    
+    switch(range) {
+        case 'today':
+            break;
+        case 'weekend':
+            // Set to next Saturday
+            const daysUntilSaturday = (6 - today.getDay()) % 7;
+            startDate.setDate(today.getDate() + daysUntilSaturday);
+            endDate.setDate(startDate.getDate() + 1); // Sunday
+            break;
+        case 'week':
+            endDate.setDate(today.getDate() + 7);
+            break;
+        case 'month':
+            endDate.setDate(today.getDate() + 30);
+            break;
+    }
+    
+    startInput.value = startDate.toISOString().split('T')[0];
+    endInput.value = endDate.toISOString().split('T')[0];
+}
+
+// Set default dates and auto-select weekend dates if it's Friday
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(today.getDate() + 30);
+    
+    document.getElementById('start_date').value = today.toISOString().split('T')[0];
+    document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    
+    if (today.getDay() === 5) { // Friday
+        setDateRange('weekend');
+    }
+});
+</script>
+{% endblock %}

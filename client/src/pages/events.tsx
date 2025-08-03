@@ -19,6 +19,9 @@ export default function Events() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchCity, setSearchCity] = useState("");
+  const [searchStartDate, setSearchStartDate] = useState("");
+  const [searchEndDate, setSearchEndDate] = useState("");
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
   const { toast } = useToast();
 
   const { data: events, isLoading } = useQuery({
@@ -84,6 +87,23 @@ export default function Events() {
     },
   });
 
+  const externalSearchMutation = useMutation({
+    mutationFn: eventApi.externalSearch,
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "External events found successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "External search failed",
+        description: "Failed to search external events. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredEvents = events?.filter((event: any) => {
     const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          event.city?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -95,6 +115,35 @@ export default function Events() {
     if (searchCity.trim()) {
       searchMutation.mutate({ city: searchCity.trim() });
     }
+  };
+
+  const handleExternalSearch = () => {
+    if (!searchCity.trim() || !searchStartDate || !searchEndDate) {
+      toast({
+        title: "Missing information",
+        description: "Please enter location, start date, and end date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const searchData = {
+      location: searchCity.trim(),
+      startDate: searchStartDate,
+      endDate: searchEndDate,
+      eventTypes: selectedEventTypes.length > 0 ? selectedEventTypes : undefined,
+      searchName: `${searchCity} Events`
+    };
+
+    externalSearchMutation.mutate(searchData);
+  };
+
+  const toggleEventType = (type: string) => {
+    setSelectedEventTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
   };
 
   return (
@@ -200,38 +249,180 @@ export default function Events() {
             </TabsContent>
 
             <TabsContent value="search" className="space-y-6">
-              <div className="max-w-2xl">
-                <div className="flex items-center space-x-4 mb-6">
-                  <div className="relative flex-1">
-                    <MapPin className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                    <Input
-                      placeholder="Enter city name..."
-                      value={searchCity}
-                      onChange={(e) => setSearchCity(e.target.value)}
-                      className="pl-10"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
+              <div className="max-w-4xl">
+                {/* Enhanced Search Form */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                  <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">Search External Events</h3>
+                  <div className="space-y-4">
+                    {/* Location */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                        <MapPin className="w-4 h-4 inline mr-2" />
+                        Location *
+                      </label>
+                      <Input
+                        placeholder="Enter city, postal code, or address (e.g., New York, NY)"
+                        value={searchCity}
+                        onChange={(e) => setSearchCity(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Date Range */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                          <Calendar className="w-4 h-4 inline mr-2" />
+                          Start Date *
+                        </label>
+                        <Input
+                          type="date"
+                          value={searchStartDate}
+                          onChange={(e) => setSearchStartDate(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                          <Calendar className="w-4 h-4 inline mr-2" />
+                          End Date *
+                        </label>
+                        <Input
+                          type="date"
+                          value={searchEndDate}
+                          onChange={(e) => setSearchEndDate(e.target.value)}
+                          min={searchStartDate || new Date().toISOString().split('T')[0]}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Event Types */}
+                    <div>
+                      <label className="block text-sm font-medium mb-3 text-slate-700 dark:text-slate-300">
+                        Event Types (optional)
+                      </label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {[
+                          { value: 'sports', label: 'Sports', icon: '⚽' },
+                          { value: 'concerts', label: 'Concerts & Music', icon: '🎵' },
+                          { value: 'fairs', label: 'Fairs & Expos', icon: '🏪' },
+                          { value: 'culture', label: 'Art & Culture', icon: '🎭' },
+                          { value: 'community', label: 'Community Events', icon: '👥' },
+                          { value: 'business', label: 'Business & Tech', icon: '💼' },
+                        ].map((type) => (
+                          <Button
+                            key={type.value}
+                            type="button"
+                            variant={selectedEventTypes.includes(type.value) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleEventType(type.value)}
+                            className="justify-start"
+                          >
+                            <span className="mr-2">{type.icon}</span>
+                            {type.label}
+                          </Button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2">Select one or more event types (leave blank for all types)</p>
+                    </div>
+
+                    {/* Search Button */}
+                    <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
+                      <Button 
+                        onClick={handleExternalSearch}
+                        disabled={externalSearchMutation.isPending || !searchCity.trim() || !searchStartDate || !searchEndDate}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      >
+                        {externalSearchMutation.isPending ? "Searching..." : "Search External Events"}
+                      </Button>
+                    </div>
                   </div>
-                  <Button 
-                    onClick={handleSearch}
-                    disabled={searchMutation.isPending || !searchCity.trim()}
-                  >
-                    {searchMutation.isPending ? "Searching..." : "Search Events"}
-                  </Button>
                 </div>
 
-                {searchMutation.data && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {searchMutation.data.map((event: any) => (
-                      <EventCard key={event.id} event={event} />
-                    ))}
+                {/* External Search Results */}
+                {externalSearchMutation.data && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                        External Events Found ({externalSearchMutation.data.resultsCount || 0})
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {externalSearchMutation.data.searchParams?.location} • {externalSearchMutation.data.timestamp && new Date(externalSearchMutation.data.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                    
+                    {externalSearchMutation.data.events?.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {externalSearchMutation.data.events.map((event: any, index: number) => (
+                          <div key={index} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">
+                                {event.event_name || event.name}
+                              </h4>
+                              {event.event_type && (
+                                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full ml-2 flex-shrink-0">
+                                  {event.event_type}
+                                </span>
+                              )}
+                            </div>
+                            {event.event_date && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                                📅 {new Date(event.event_date).toLocaleDateString()}
+                                {event.event_time && ` at ${event.event_time}`}
+                              </p>
+                            )}
+                            {event.venue_name && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                                📍 {event.venue_name}
+                              </p>
+                            )}
+                            {event.description && (
+                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                                {event.description.substring(0, 100)}...
+                              </p>
+                            )}
+                            {event.source_url && (
+                              <a 
+                                href={event.source_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 inline-block"
+                              >
+                                View Event →
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                        <p className="text-slate-500 dark:text-slate-400">
+                          No external events found for "{externalSearchMutation.data.searchParams?.location}"
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Try adjusting your search criteria or date range
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {searchMutation.data?.length === 0 && (
-                  <div className="text-center py-12">
-                    <Calendar className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-500 dark:text-slate-400">No events found in {searchCity}</p>
+                {/* Internal Search Results */}
+                {searchMutation.data && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                    <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">Internal Events</h3>
+                    {searchMutation.data?.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {searchMutation.data.map((event: any) => (
+                          <EventCard key={event.id} event={event} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Calendar className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                        <p className="text-slate-500 dark:text-slate-400">No internal events found in {searchCity}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
