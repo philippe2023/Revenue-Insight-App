@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Search, Calendar, MapPin } from "lucide-react";
+import { Plus, Search, Calendar, MapPin, Eye, ExternalLink } from "lucide-react";
 import Navigation from "@/components/layout/navigation";
 import Sidebar from "@/components/layout/sidebar";
 import EventCard from "@/components/events/event-card";
@@ -144,6 +144,65 @@ export default function Events() {
         ? prev.filter(t => t !== type)
         : [...prev, type]
     );
+  };
+
+  // Helper function to get event type specific image
+  const getEventTypeImage = (eventType?: string) => {
+    const eventImages: Record<string, string> = {
+      'sports': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'concerts': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'music': 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'fairs': 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'culture': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'art': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'community': 'https://images.unsplash.com/photo-1531058020387-3be344556be6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'business': 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'tech': 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'conference': 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80',
+      'default': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80'
+    };
+
+    const normalizedType = eventType?.toLowerCase();
+    return eventImages[normalizedType || 'default'] || eventImages.default;
+  };
+
+  // Handle event details modal/dialog
+  const handleEventDetails = (event: any) => {
+    toast({
+      title: "Event Details",
+      description: `Opening details for: ${event.event_name || event.name}`,
+    });
+    // Could open a detailed modal here
+  };
+
+  // Handle importing event to internal system
+  const handleImportEvent = async (event: any) => {
+    try {
+      const eventData = {
+        name: event.event_name || event.name,
+        description: event.description || 'Imported from external event search',
+        date: event.event_date || new Date().toISOString().split('T')[0],
+        time: event.event_time || '12:00',
+        location: event.venue_name || searchCity,
+        city: searchCity,
+        category: event.event_type || 'Other',
+        expectedAttendees: event.expected_attendees || 100,
+        impactLevel: 'medium',
+        externalUrl: event.source_url
+      };
+
+      await createMutation.mutateAsync(eventData);
+      toast({
+        title: "Event Imported",
+        description: `"${eventData.name}" has been added to your events.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Import Failed",
+        description: "Failed to import event. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -351,45 +410,102 @@ export default function Events() {
                     </div>
                     
                     {externalSearchMutation.data.events?.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                         {externalSearchMutation.data.events.map((event: any, index: number) => (
-                          <div key={index} className="border border-slate-200 dark:border-slate-600 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">
-                                {event.event_name || event.name}
-                              </h4>
-                              {event.event_type && (
-                                <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full ml-2 flex-shrink-0">
-                                  {event.event_type}
-                                </span>
-                              )}
+                          <div key={index} className="group">
+                            {/* Event Image */}
+                            <div className="relative overflow-hidden rounded-lg">
+                              <img 
+                                className="object-cover object-center w-full h-64 rounded-lg lg:h-80 group-hover:scale-105 transition-transform duration-300" 
+                                src={event.image_url || getEventTypeImage(event.event_type)} 
+                                alt={event.event_name || event.name}
+                                onError={(e) => {
+                                  e.currentTarget.src = getEventTypeImage(event.event_type);
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-300 rounded-lg"></div>
                             </div>
-                            {event.event_date && (
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-                                📅 {new Date(event.event_date).toLocaleDateString()}
-                                {event.event_time && ` at ${event.event_time}`}
+
+                            {/* Event Content */}
+                            <div className="mt-6">
+                              {/* Event Type Badge */}
+                              <span className="text-blue-500 dark:text-blue-400 uppercase text-sm font-medium">
+                                {event.event_type || 'Event'}
+                              </span>
+
+                              {/* Event Title */}
+                              <h1 className="mt-4 text-xl font-semibold text-gray-800 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-300 cursor-pointer line-clamp-2">
+                                {event.event_name || event.name}
+                              </h1>
+
+                              {/* Event Description */}
+                              <p className="mt-2 text-gray-500 dark:text-gray-400 line-clamp-3">
+                                {event.description || 'Join us for this exciting event. More details available on the event page.'}
                               </p>
-                            )}
-                            {event.venue_name && (
-                              <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-                                📍 {event.venue_name}
-                              </p>
-                            )}
-                            {event.description && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                                {event.description.substring(0, 100)}...
-                              </p>
-                            )}
-                            {event.source_url && (
-                              <a 
-                                href={event.source_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 inline-block"
-                              >
-                                View Event →
-                              </a>
-                            )}
+
+                              {/* Event Details & Actions */}
+                              <div className="flex items-center justify-between mt-6">
+                                <div className="space-y-1">
+                                  {/* Date */}
+                                  {event.event_date && (
+                                    <div className="flex items-center text-sm text-gray-700 dark:text-gray-300">
+                                      <Calendar className="w-4 h-4 mr-2" />
+                                      {new Date(event.event_date).toLocaleDateString('en-US', { 
+                                        weekday: 'short', 
+                                        year: 'numeric', 
+                                        month: 'short', 
+                                        day: 'numeric' 
+                                      })}
+                                      {event.event_time && (
+                                        <span className="ml-2 text-gray-500">
+                                          {event.event_time}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {/* Venue */}
+                                  {event.venue_name && (
+                                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                      <MapPin className="w-4 h-4 mr-2" />
+                                      {event.venue_name}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEventDetails(event)}
+                                    className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    Details
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleImportEvent(event)}
+                                    className="hover:bg-green-50 dark:hover:bg-green-900/20"
+                                  >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Import
+                                  </Button>
+                                  {event.source_url && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => window.open(event.source_url, '_blank')}
+                                      className="hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                                    >
+                                      <ExternalLink className="w-4 h-4 mr-1" />
+                                      Source
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
