@@ -76,8 +76,8 @@ export default function Sidebar() {
             
             return (
               <Link key={item.href} href={item.href}>
-                <a className={cn(
-                  "flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors",
+                <div className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer",
                   isActive 
                     ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20"
                     : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -92,7 +92,7 @@ export default function Sidebar() {
                   {item.indicator && (
                     <span className="w-2 h-2 bg-green-500 rounded-full ml-auto"></span>
                   )}
-                </a>
+                </div>
               </Link>
             );
           })}

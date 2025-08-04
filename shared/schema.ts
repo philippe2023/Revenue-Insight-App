@@ -321,7 +321,7 @@ export const insertEventSchema = createInsertSchema(events, {
     message: "Please enter a valid end date",
   }),
   expectedAttendees: z.coerce.number().int().positive().optional().nullable(),
-  impactRadius: z.coerce.number().positive().optional().nullable(),
+  impactRadius: z.coerce.string().optional().nullable(),
 }).omit({
   id: true,
   createdAt: true,
