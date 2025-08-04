@@ -197,8 +197,8 @@ export class DatabaseStorage implements IStorage {
 
         createdAt: hotels.createdAt,
         updatedAt: hotels.updatedAt,
-        revenue: sql<number>`COALESCE(SUM(${hotelActuals.revenue}), 0)`,
-        occupancyRate: sql<number>`COALESCE(AVG(${hotelActuals.occupancyRate}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${hotelActuals.revenue}), 0)::numeric`,
+        occupancyRate: sql<number>`COALESCE(AVG(${hotelActuals.occupancyRate}), 0)::numeric`,
       })
       .from(hotels)
       .leftJoin(hotelActuals, eq(hotels.id, hotelActuals.hotelId))

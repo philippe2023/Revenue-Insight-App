@@ -453,7 +453,7 @@ export default function Analytics() {
                               ${(hotel.revenue / 1000).toFixed(0)}K
                             </p>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                              {hotel.occupancyRate.toFixed(1)}%
+                              {(hotel.occupancyRate || 0).toFixed(1)}%
                             </p>
                           </div>
                         </div>

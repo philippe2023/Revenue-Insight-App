@@ -66,7 +66,7 @@ export default function TopPerformers() {
                   ${(hotel.revenue / 1000).toFixed(0)}K
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {hotel.occupancyRate.toFixed(0)}%
+                  {(hotel.occupancyRate || 0).toFixed(0)}%
                 </p>
               </div>
             </div>

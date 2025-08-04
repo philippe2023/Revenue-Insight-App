@@ -44,10 +44,11 @@ The application uses a comprehensive schema including:
 - Hotel assignments for team member property allocation
 
 ### Authentication and Authorization
-- **Authentication Method**: Replit OAuth with OpenID Connect
-- **Session Management**: Server-side sessions stored in PostgreSQL
+- **Authentication Method**: Session-based email/password authentication with secure password hashing
+- **Session Management**: Server-side sessions stored in PostgreSQL using connect-pg-simple
 - **Authorization**: Role-based access control with user, admin, and manager roles
-- **Security**: HTTP-only cookies, CSRF protection, and secure session configuration
+- **Security**: HTTP-only cookies, scrypt password hashing, secure session configuration
+- **Features**: User registration, login, logout, protected routes, authentication middleware
 
 ### API Architecture
 - **Structure**: RESTful endpoints organized by resource type
@@ -59,7 +60,7 @@ The application uses a comprehensive schema including:
 
 ### Third-party Services
 - **Database**: Neon serverless PostgreSQL for data persistence
-- **Authentication**: Replit OAuth service for user authentication
+- **Authentication**: Custom session-based authentication with secure password hashing
 - **CDN**: Google Fonts for Inter font family
 
 ### Key Libraries and Frameworks
