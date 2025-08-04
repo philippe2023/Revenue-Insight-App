@@ -228,7 +228,10 @@ export default function Analytics() {
                 <div className="mt-4">
                   <p className="text-slate-600 dark:text-slate-400 text-sm">Avg Occupancy</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {kpis?.avgOccupancyRate?.toFixed(1) || '0'}%
+                    {(() => {
+                      const occupancy = typeof kpis?.avgOccupancyRate === 'number' ? kpis.avgOccupancyRate : 0;
+                      return occupancy.toFixed(1);
+                    })()}%
                   </p>
                 </div>
               </CardContent>
@@ -295,7 +298,10 @@ export default function Analytics() {
                         <LineChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
                           <XAxis dataKey="month" className="text-slate-600 dark:text-slate-400" />
-                          <YAxis className="text-slate-600 dark:text-slate-400" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`} />
+                          <YAxis className="text-slate-600 dark:text-slate-400" tickFormatter={(value) => {
+                            const num = typeof value === 'number' ? value : 0;
+                            return `$${(num / 1000).toFixed(0)}K`;
+                          }} />
                           <Tooltip 
                             formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
                             contentStyle={{
@@ -329,7 +335,10 @@ export default function Analytics() {
                         <BarChart data={performanceData.slice(0, 6)}>
                           <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
                           <XAxis dataKey="name" className="text-slate-600 dark:text-slate-400" fontSize={12} />
-                          <YAxis className="text-slate-600 dark:text-slate-400" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`} />
+                          <YAxis className="text-slate-600 dark:text-slate-400" tickFormatter={(value) => {
+                            const num = typeof value === 'number' ? value : 0;
+                            return `$${(num / 1000).toFixed(0)}K`;
+                          }} />
                           <Tooltip 
                             formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
                             contentStyle={{
@@ -450,10 +459,16 @@ export default function Analytics() {
                           </div>
                           <div className="text-right">
                             <p className="font-semibold text-green-600 dark:text-green-400">
-                              ${(hotel.revenue / 1000).toFixed(0)}K
+                              ${(() => {
+                                const revenue = typeof hotel.revenue === 'number' ? hotel.revenue : 0;
+                                return (revenue / 1000).toFixed(0);
+                              })()}K
                             </p>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
-                              {(hotel.occupancyRate || 0).toFixed(1)}%
+                              {(() => {
+                                const occupancy = typeof hotel.occupancyRate === 'number' ? hotel.occupancyRate : 0;
+                                return occupancy.toFixed(1);
+                              })()}%
                             </p>
                           </div>
                         </div>

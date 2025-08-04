@@ -63,10 +63,16 @@ export default function TopPerformers() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                  ${(hotel.revenue / 1000).toFixed(0)}K
+                  ${(() => {
+                    const revenue = typeof hotel.revenue === 'number' ? hotel.revenue : 0;
+                    return (revenue / 1000).toFixed(0);
+                  })()}K
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {(hotel.occupancyRate || 0).toFixed(0)}%
+                  {(() => {
+                    const occupancy = typeof hotel.occupancyRate === 'number' ? hotel.occupancyRate : 0;
+                    return occupancy.toFixed(0);
+                  })()}%
                 </p>
               </div>
             </div>
