@@ -159,46 +159,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/hotels/:id', async (req: any, res) => {
+  app.put('/api/hotels/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
-      const validatedData = insertHotelSchema.partial().parse(req.body);
-      const hotel = await storage.updateHotel(id, validatedData);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'update',
-        entityType: 'hotel',
-        entityId: id,
-        metadata: { hotelName: hotel.name },
-      });
+      const result = insertHotelSchema.partial().safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid hotel data", errors: result.error.errors });
+      }
 
+      const hotel = await storage.updateHotel(id, result.data);
       res.json(hotel);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
       console.error("Error updating hotel:", error);
       res.status(500).json({ message: "Failed to update hotel" });
     }
   });
 
-  app.delete('/api/hotels/:id', async (req: any, res) => {
+  app.delete('/api/hotels/:id', requireAuth, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
       await storage.deleteHotel(id);
-      
-      // Log activity
-      await storage.logActivity({
-        userId,
-        action: 'delete',
-        entityType: 'hotel',
-        entityId: id,
-      });
-
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting hotel:", error);

@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Hotels from "@/pages/hotels";
+import HotelDetail from "@/pages/hotel-detail";
 import Forecasting from "@/pages/forecasting";
 import Events from "@/pages/events";
 import Tasks from "@/pages/tasks";
@@ -34,6 +35,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/hotels" component={Hotels} />
+          <Route path="/hotels/:id" component={HotelDetail} />
           <Route path="/forecasting" component={Forecasting} />
           <Route path="/events" component={Events} />
           <Route path="/tasks" component={Tasks} />
