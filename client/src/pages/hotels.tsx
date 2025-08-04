@@ -16,6 +16,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, MapPin, Edit, Trash2, ExternalLink, Building2 } from "lucide-react";
 import { z } from "zod";
+import Navigation from "@/components/layout/navigation";
+import Sidebar from "@/components/layout/sidebar";
 
 const hotelFormSchema = insertHotelSchema.extend({
   name: z.string().min(1, "Hotel name is required"),
@@ -130,15 +132,19 @@ export default function Hotels() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Hotel Management</h1>
-            <p className="text-slate-600 dark:text-slate-400">Manage your hotel properties and their details</p>
-          </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <Navigation />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
+            <div className="max-w-7xl mx-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Hotel Management</h1>
+                  <p className="text-slate-600 dark:text-slate-400">Manage your hotel properties and their details</p>
+                </div>
+                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
@@ -155,52 +161,54 @@ export default function Hotels() {
                 onCancel={() => setIsCreateDialogOpen(false)}
               />
             </DialogContent>
-          </Dialog>
-        </div>
+                </Dialog>
+              </div>
 
-        {/* Hotels Grid */}
-        {hotels?.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No hotels yet</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-4">Get started by adding your first hotel property</p>
-              <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Hotel
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {hotels?.map((hotel) => (
-              <HotelCard 
-                key={hotel.id} 
-                hotel={hotel} 
-                onEdit={setEditingHotel}
-                onDelete={(id) => deleteMutation.mutate(id)}
-                isDeleting={deleteMutation.isPending}
-              />
-            ))}
-          </div>
-        )}
+              {/* Hotels Grid */}
+              {hotels?.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No hotels yet</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4">Get started by adding your first hotel property</p>
+                    <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Hotel
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {hotels?.map((hotel) => (
+                    <HotelCard 
+                      key={hotel.id} 
+                      hotel={hotel} 
+                      onEdit={setEditingHotel}
+                      onDelete={(id) => deleteMutation.mutate(id)}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  ))}
+                </div>
+              )}
 
-        {/* Edit Dialog */}
-        <Dialog open={!!editingHotel} onOpenChange={() => setEditingHotel(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Hotel</DialogTitle>
-            </DialogHeader>
-            {editingHotel && (
-              <HotelForm 
-                hotel={editingHotel}
-                onSubmit={(data) => updateMutation.mutate({ id: editingHotel.id, data })}
-                isLoading={updateMutation.isPending}
-                onCancel={() => setEditingHotel(null)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+              {/* Edit Dialog */}
+              <Dialog open={!!editingHotel} onOpenChange={() => setEditingHotel(null)}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Edit Hotel</DialogTitle>
+                  </DialogHeader>
+                  {editingHotel && (
+                    <HotelForm 
+                      hotel={editingHotel}
+                      onSubmit={(data) => updateMutation.mutate({ id: editingHotel.id, ...data })}
+                      isLoading={updateMutation.isPending}
+                      onCancel={() => setEditingHotel(null)}
+                    />
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
+        </main>
       </div>
     </div>
   );
@@ -376,7 +384,7 @@ function HotelForm({ hotel, onSubmit, isLoading, onCancel }: {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || "active"}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />

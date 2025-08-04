@@ -25,6 +25,8 @@ import {
   Calendar,
   Shield
 } from "lucide-react";
+import Navigation from "@/components/layout/navigation";
+import Sidebar from "@/components/layout/sidebar";
 
 export default function HotelDetail() {
   const [, params] = useRoute("/hotels/:id");
@@ -70,13 +72,19 @@ export default function HotelDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
-            <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-            <div className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-          </div>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Navigation />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
+            <div className="max-w-4xl mx-auto">
+              <div className="animate-pulse space-y-6">
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
+                <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+                <div className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     );
@@ -84,53 +92,63 @@ export default function HotelDetail() {
 
   if (error || !hotel) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-        <div className="max-w-4xl mx-auto">
-          <Card className="text-center py-12">
-            <CardContent>
-              <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Hotel not found</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-4">The hotel you're looking for doesn't exist or has been removed.</p>
-              <Link href="/hotels">
-                <Button>Back to Hotels</Button>
-              </Link>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Navigation />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
+            <div className="max-w-4xl mx-auto">
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Building2 className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Hotel not found</h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">The hotel you're looking for doesn't exist or has been removed.</p>
+                  <Link href="/hotels">
+                    <Button>Back to Hotels</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/hotels">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Hotels
-            </Button>
-          </Link>
-          <div className="flex-1" />
-          <Link href={`/hotels/${hotel.id}/edit`}>
-            <Button variant="outline" className="text-blue-600 dark:text-blue-400">
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-          </Link>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowDeleteDialog(true)}
-            className="text-red-600 dark:text-red-400"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <Navigation />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
+            <div className="max-w-4xl mx-auto">
+              {/* Header */}
+              <div className="flex items-center gap-4 mb-6">
+                <Link href="/hotels">
+                  <Button variant="outline" size="sm">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Hotels
+                  </Button>
+                </Link>
+                <div className="flex-1" />
+                <Link href={`/hotels/${hotel.id}/edit`}>
+                  <Button variant="outline" className="text-blue-600 dark:text-blue-400">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </Link>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
 
-        {/* Hotel Image */}
-        <Card className="overflow-hidden mb-6">
+              {/* Hotel Image */}
+              <Card className="overflow-hidden mb-6">
           <div className="aspect-[21/9] bg-slate-200 dark:bg-slate-700">
             {hotel.imageUrl ? (
               <img 
@@ -348,6 +366,8 @@ export default function HotelDetail() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+          </div>
+        </main>
       </div>
     </div>
   );
