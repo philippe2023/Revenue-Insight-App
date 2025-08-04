@@ -1,0 +1,46 @@
+Please implement a secure and modern authentication system in my Flask web app. The app already uses Flask, SQLAlchemy, and Jinja templates. Here's what I need you to do:
+
+🔐 Authentication System Features:
+1. **User Registration**  
+   - Allow users to register with username, email, and password.  
+   - Use password hashing via `werkzeug.security.generate_password_hash`.
+
+2. **User Login**  
+   - Allow login using email and password.  
+   - Use `check_password_hash` for password validation.  
+   - Use Flask-Login for session management.
+
+3. **User Logout**  
+   - Implement logout route using `logout_user()`.
+
+4. **Session Protection**  
+   - Protect authenticated routes with `@login_required`.  
+   - Use `LoginManager` in `app.py` with `login_view = 'login'`.
+
+5. **User Profile Page**  
+   - Create `/profile` route showing username, email, and basic user info.  
+   - Display a logout link.
+
+6. **Update User Model**  
+   - Ensure the `User` model inherits from `UserMixin` and includes:
+     - `id`, `username`, `email`, `password`, `is_admin`, `created_at`
+
+7. **Templates**  
+   - Create Jinja2 templates for:
+     - `register.html`: registration form
+     - `login.html`: login form
+     - `profile.html`: user profile page
+   - Keep forms simple and styled with Bootstrap 5 or Tailwind CSS if available.
+
+8. **Navigation Integration**  
+   - In the base template (`base.html` or `layout.html`), add dynamic navbar links:
+     - Show "Login" and "Register" if user is not authenticated.
+     - Show "Profile" and "Logout" if user is logged in.
+
+9. **Folder Structure**  
+   - Place auth templates in `templates/auth/`.  
+   - Organize logic cleanly in `routes.py`.
+
+Use Flask best practices. Do not use Flask-WTF. Just use plain HTML forms with POST requests. This app is part of a professional hotel revenue insight system, so keep styling modern and clean.
+
+Make sure the functionality is fully working and integrated with the rest of the app. Return a summary of the files you changed or added, and list any assumptions you made.

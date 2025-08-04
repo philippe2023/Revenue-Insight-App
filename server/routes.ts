@@ -29,8 +29,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes are handled in setupEmailAuth
 
-  // Dashboard routes
-  app.get('/api/dashboard/kpis', async (req: any, res) => {
+  // Dashboard routes (protected)
+  app.get('/api/dashboard/kpis', requireAuth, async (req: any, res) => {
     try {
       // Mock KPI data since we removed authentication
       const kpis = {
@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/revenue-analytics', async (req: any, res) => {
+  app.get('/api/dashboard/revenue-analytics', requireAuth, async (req: any, res) => {
     try {
       // Mock revenue analytics data
       const analytics = {
@@ -70,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/top-performers', async (req: any, res) => {
+  app.get('/api/dashboard/top-performers', requireAuth, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 4;
       const topPerformers = await storage.getTopPerformingHotels(limit);
@@ -81,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/recent-activity', async (req: any, res) => {
+  app.get('/api/dashboard/recent-activity', requireAuth, async (req: any, res) => {
     try {
       // Mock recent activity data
       const activities = [
@@ -114,8 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Hotel routes
-  app.get('/api/hotels', async (req: any, res) => {
+  // Hotel routes (protected)
+  app.get('/api/hotels', requireAuth, async (req: any, res) => {
     try {
       const hotels = await storage.getHotels('');
       res.json(hotels);
@@ -125,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/hotels/:id', async (req, res) => {
+  app.get('/api/hotels/:id', requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const hotel = await storage.getHotel(id);
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/hotels', async (req: any, res) => {
+  app.post('/api/hotels', requireAuth, async (req: any, res) => {
     try {
       const result = insertHotelSchema.safeParse(req.body);
       if (!result.success) {

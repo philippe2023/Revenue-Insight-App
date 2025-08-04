@@ -9,7 +9,7 @@ import {
   hotelAssignments,
   activityLog,
   type User,
-  type UpsertUser,
+
   type InsertUser,
   type Hotel,
   type InsertHotel,
@@ -194,7 +194,7 @@ export class DatabaseStorage implements IStorage {
         totalRooms: hotels.totalRooms,
         imageUrl: hotels.imageUrl,
         status: hotels.status,
-        ownerId: hotels.ownerId,
+
         createdAt: hotels.createdAt,
         updatedAt: hotels.updatedAt,
         revenue: sql<number>`COALESCE(SUM(${hotelActuals.revenue}), 0)`,
@@ -218,7 +218,7 @@ export class DatabaseStorage implements IStorage {
         hotels.totalRooms,
         hotels.imageUrl,
         hotels.status,
-        hotels.ownerId,
+
         hotels.createdAt,
         hotels.updatedAt
       )
@@ -264,15 +264,23 @@ export class DatabaseStorage implements IStorage {
       )
     );
 
-    if (startDate) {
-      query = query.where(gte(events.startDate, startDate.toISOString().split('T')[0]));
+    if (startDate && endDate) {
+      return await db.select().from(events).where(
+        and(
+          eq(events.city, city),
+          eq(events.isActive, true),
+          gte(events.startDate, startDate.toISOString().split('T')[0]),
+          lte(events.endDate, endDate.toISOString().split('T')[0])
+        )
+      ).orderBy(events.startDate);
     }
 
-    if (endDate) {
-      query = query.where(lte(events.endDate, endDate.toISOString().split('T')[0]));
-    }
-
-    return await query.orderBy(events.startDate);
+    return await db.select().from(events).where(
+      and(
+        eq(events.city, city),
+        eq(events.isActive, true)
+      )
+    ).orderBy(events.startDate);
   }
 
   async getUpcomingEvents(limit: number): Promise<Event[]> {
@@ -291,13 +299,16 @@ export class DatabaseStorage implements IStorage {
 
   // Forecast operations
   async getForecasts(hotelId?: string): Promise<Forecast[]> {
-    let query = db.select().from(forecasts);
-    
     if (hotelId) {
-      query = query.where(eq(forecasts.hotelId, hotelId));
+      return await db.select()
+        .from(forecasts)
+        .where(eq(forecasts.hotelId, hotelId))
+        .orderBy(desc(forecasts.forecastDate));
     }
 
-    return await query.orderBy(desc(forecasts.forecastDate));
+    return await db.select()
+      .from(forecasts)
+      .orderBy(desc(forecasts.forecastDate));
   }
 
   async getForecast(id: string): Promise<Forecast | undefined> {
