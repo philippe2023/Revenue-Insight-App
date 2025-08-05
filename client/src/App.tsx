@@ -11,6 +11,8 @@ import Hotels from "@/pages/hotels";
 import HotelDetail from "@/pages/hotel-detail";
 import Forecasting from "@/pages/forecasting";
 import Events from "@/pages/events";
+import EventsManagement from "@/pages/events-management";
+import EventDetail from "@/pages/event-detail";
 import Tasks from "@/pages/tasks";
 import Analytics from "@/pages/analytics";
 import AIChat from "@/pages/ai-chat";
@@ -38,6 +40,8 @@ function Router() {
           <Route path="/hotels/:id" component={HotelDetail} />
           <Route path="/forecasting" component={Forecasting} />
           <Route path="/events" component={Events} />
+          <Route path="/events-management" component={EventsManagement} />
+          <Route path="/events/:id" component={EventDetail} />
           <Route path="/tasks" component={Tasks} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/ai-chat" component={AIChat} />

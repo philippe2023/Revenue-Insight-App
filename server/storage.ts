@@ -49,12 +49,14 @@ export interface IStorage {
 
   // Event operations
   getEvents(): Promise<Event[]>;
+  getAllEvents(): Promise<Event[]>;
   getEvent(id: string): Promise<Event | undefined>;
   createEvent(event: InsertEvent): Promise<Event>;
-  updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event>;
+  updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined>;
   deleteEvent(id: string): Promise<void>;
   getEventsByLocation(city: string, startDate?: Date, endDate?: Date): Promise<Event[]>;
   getUpcomingEvents(limit: number): Promise<Event[]>;
+  getEventByNameAndDate(name: string, startDate: string): Promise<Event | undefined>;
 
   // Forecast operations
   getForecasts(hotelId?: string): Promise<Forecast[]>;
@@ -243,13 +245,27 @@ export class DatabaseStorage implements IStorage {
     return newEvent;
   }
 
-  async updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event> {
+  async getAllEvents(): Promise<Event[]> {
+    return await db.select().from(events).orderBy(desc(events.startDate));
+  }
+
+  async updateEvent(id: string, event: Partial<InsertEvent>): Promise<Event | undefined> {
     const [updatedEvent] = await db
       .update(events)
       .set({ ...event, updatedAt: new Date() })
       .where(eq(events.id, id))
       .returning();
     return updatedEvent;
+  }
+
+  async getEventByNameAndDate(name: string, startDate: string): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(
+      and(
+        eq(events.name, name),
+        eq(events.startDate, startDate)
+      )
+    );
+    return event;
   }
 
   async deleteEvent(id: string): Promise<void> {

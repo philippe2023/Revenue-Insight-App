@@ -13,6 +13,8 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { initializeTestData } from "./data-init";
+import multer from "multer";
+import * as XLSX from "xlsx";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // CORS configuration
@@ -23,6 +25,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
     exposedHeaders: ['Set-Cookie'],
   }));
+
+  // Multer configuration for file uploads
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only Excel files are allowed'));
+      }
+    }
+  });
 
   // Auth middleware
   setupAuth(app);
@@ -274,6 +293,230 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error searching external events:", error);
       res.status(500).json({ message: "Failed to search external events" });
+    }
+  });
+
+  // Event management routes (protected)
+  app.get('/api/events/:id', requireAuth, async (req: any, res) => {
+    try {
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      res.json(event);
+    } catch (error) {
+      console.error("Error fetching event:", error);
+      res.status(500).json({ message: "Failed to fetch event" });
+    }
+  });
+
+  app.put('/api/events/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertEventSchema.parse(req.body);
+      const event = await storage.updateEvent(id, validatedData);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      res.json(event);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating event:", error);
+      res.status(500).json({ message: "Failed to update event" });
+    }
+  });
+
+  app.delete('/api/events/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteEvent(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      res.status(500).json({ message: "Failed to delete event" });
+    }
+  });
+
+  // Event search with database storage
+  app.post('/api/events/search', requireAuth, async (req: any, res) => {
+    try {
+      const { city } = req.body;
+      if (!city) {
+        return res.status(400).json({ message: "City is required" });
+      }
+
+      // Import event finder service dynamically
+      const { eventFinderService } = await import('./event-finder');
+      
+      const searchParams = {
+        location: city,
+        eventTypes: ['all'],
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Next year
+      };
+
+      const foundEvents = await eventFinderService.searchEvents(searchParams);
+      
+      // Store found events in database
+      let savedCount = 0;
+      for (const eventData of foundEvents) {
+        try {
+          const existingEvent = await storage.getEventByNameAndDate(eventData.name, eventData.startDate);
+          if (!existingEvent) {
+            await storage.createEvent({
+              ...eventData,
+              createdBy: req.user.id,
+              scrapedAt: new Date().toISOString(),
+            });
+            savedCount++;
+          }
+        } catch (error) {
+          console.error("Error saving event:", error);
+        }
+      }
+
+      res.json({ 
+        eventsFound: foundEvents.length,
+        eventsSaved: savedCount,
+        city 
+      });
+    } catch (error) {
+      console.error("Error searching events:", error);
+      res.status(500).json({ message: "Failed to search events" });
+    }
+  });
+
+  // Excel upload/download routes
+  app.post('/api/events/upload', requireAuth, upload.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet);
+
+      let imported = 0;
+      const errors: string[] = [];
+
+      for (const row of data) {
+        try {
+          const eventData = {
+            name: row['Event Name'] || row['name'],
+            description: row['Description'] || row['description'],
+            category: row['Category'] || row['category'] || 'conference',
+            startDate: row['Start Date'] || row['startDate'],
+            endDate: row['End Date'] || row['endDate'],
+            location: row['Location'] || row['location'],
+            city: row['City'] || row['city'],
+            state: row['State'] || row['state'],
+            country: row['Country'] || row['country'],
+            expectedAttendees: parseInt(row['Expected Attendees'] || row['expectedAttendees'] || '0') || null,
+            impactRadius: parseFloat(row['Impact Radius'] || row['impactRadius'] || '50'),
+            sourceUrl: row['Source URL'] || row['sourceUrl'],
+            createdBy: req.user.id,
+          };
+
+          // Validate required fields
+          if (!eventData.name || !eventData.startDate || !eventData.endDate || !eventData.city) {
+            errors.push(`Row missing required fields: ${eventData.name || 'Unnamed event'}`);
+            continue;
+          }
+
+          // Check if event already exists
+          const existingEvent = await storage.getEventByNameAndDate(eventData.name, eventData.startDate);
+          if (!existingEvent) {
+            await storage.createEvent(eventData);
+            imported++;
+          }
+        } catch (error) {
+          errors.push(`Error processing row: ${error.message}`);
+        }
+      }
+
+      res.json({
+        imported,
+        total: data.length,
+        errors: errors.slice(0, 10), // Limit error messages
+        hasMoreErrors: errors.length > 10
+      });
+    } catch (error) {
+      console.error("Error uploading events:", error);
+      res.status(500).json({ message: "Failed to upload events" });
+    }
+  });
+
+  app.get('/api/events/template', (req, res) => {
+    try {
+      const templateData = [
+        {
+          'Event Name': 'Tech Conference 2024',
+          'Description': 'Annual technology conference',
+          'Category': 'conference',
+          'Start Date': '2024-06-15',
+          'End Date': '2024-06-17',
+          'Location': 'Convention Center',
+          'City': 'San Francisco',
+          'State': 'California',
+          'Country': 'United States',
+          'Expected Attendees': 5000,
+          'Impact Radius': 50,
+          'Source URL': 'https://techconf2024.com'
+        }
+      ];
+
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Events Template');
+
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      res.setHeader('Content-Disposition', 'attachment; filename=events-template.xlsx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating template:", error);
+      res.status(500).json({ message: "Failed to generate template" });
+    }
+  });
+
+  app.get('/api/events/export', requireAuth, async (req: any, res) => {
+    try {
+      const events = await storage.getAllEvents();
+      
+      const exportData = events.map(event => ({
+        'Event Name': event.name,
+        'Description': event.description || '',
+        'Category': event.category || '',
+        'Start Date': event.startDate,
+        'End Date': event.endDate,
+        'Location': event.location || '',
+        'City': event.city || '',
+        'State': event.state || '',
+        'Country': event.country || '',
+        'Expected Attendees': event.expectedAttendees || '',
+        'Impact Radius': event.impactRadius || '',
+        'Source URL': event.sourceUrl || '',
+        'Created At': event.createdAt,
+        'Status': event.isActive ? 'Active' : 'Inactive'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Events');
+
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      res.setHeader('Content-Disposition', 'attachment; filename=events-export.xlsx');
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error exporting events:", error);
+      res.status(500).json({ message: "Failed to export events" });
     }
   });
 

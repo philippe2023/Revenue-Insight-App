@@ -40,6 +40,11 @@ export default function HotelDetail() {
     enabled: !!params?.id,
   });
 
+  const { data: events } = useQuery({
+    queryKey: ["/api/events"],
+    retry: false,
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       return await apiRequest(`/api/hotels/${id}`, "DELETE");
@@ -335,6 +340,67 @@ export default function HotelDetail() {
                 </Link>
               </CardContent>
             </Card>
+
+            {/* Events in Same City */}
+            {hotel.city && events && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Events in {hotel.city}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const cityEvents = events.filter(event => 
+                      event.city && event.city.toLowerCase() === hotel.city?.toLowerCase()
+                    );
+                    
+                    if (cityEvents.length === 0) {
+                      return (
+                        <p className="text-slate-500 dark:text-slate-400 text-center py-4">
+                          No events found in {hotel.city}
+                        </p>
+                      );
+                    }
+                    
+                    return (
+                      <div className="space-y-3">
+                        {cityEvents.slice(0, 5).map((event) => (
+                          <div key={event.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-slate-900 dark:text-white">{event.name}</h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                {new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}
+                              </p>
+                              {event.expectedAttendees && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                  Expected: {event.expectedAttendees.toLocaleString()} attendees
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <Badge variant="outline" className="text-xs">
+                                {event.category || 'Event'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                        {cityEvents.length > 5 && (
+                          <div className="text-center pt-2">
+                            <Link href="/events-management">
+                              <Button variant="outline" size="sm">
+                                View all {cityEvents.length} events in {hotel.city}
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 

@@ -22,8 +22,8 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js server
 - **Language**: TypeScript with ES modules
 - **API Design**: RESTful API with session-based authentication
-- **Authentication**: Replit OAuth integration with session management
-- **Middleware**: CORS handling, JSON parsing, and error handling middleware
+- **Authentication**: Session-based email/password authentication with secure password hashing
+- **Middleware**: CORS handling, JSON parsing, error handling, and file upload middleware (multer)
 
 ### Data Storage Solutions
 - **Database**: PostgreSQL with Neon serverless database
@@ -35,13 +35,21 @@ Preferred communication style: Simple, everyday language.
 The application uses a comprehensive schema including:
 - Users table with role-based access (user, admin, manager)
 - Hotels table with detailed property information and status tracking
-- Events table for local event discovery and impact analysis
+- Events table for local event discovery and impact analysis with city-based hotel linking
 - Forecasts table for revenue predictions with confidence levels
 - Hotel actuals for performance tracking
 - Tasks table for team collaboration and assignment management
 - Comments system for threaded discussions
 - Activity logging for audit trails
 - Hotel assignments for team member property allocation
+
+### Event Management System
+- **City-based Linking**: Events and hotels are bidirectionally linked by city location
+- **Excel Integration**: Full Excel upload/download functionality using multer and xlsx packages
+- **Event Search**: Automated event discovery and manual event creation capabilities
+- **CRUD Operations**: Complete create, read, update, delete operations for events
+- **Template System**: Excel template download for bulk event data management
+- **Data Validation**: Comprehensive validation and error handling for event imports
 
 ### Authentication and Authorization
 - **Authentication Method**: Session-based email/password authentication with secure password hashing

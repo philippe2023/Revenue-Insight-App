@@ -1,0 +1,61 @@
+Please implement the full Event Management system in the web app. The app already supports user authentication and hotel management.
+
+📅 Event Management Features:
+
+1. **Create Event**
+   - Route: `/events/new` (GET + POST)
+   - Form fields:
+     - `title`
+     - `description`
+     - `start_date` (Date)
+     - `end_date` (Date)
+     - `event_type` (e.g., sports, expo, concert — dropdown)
+     - `event_link` (clickable link to event website)
+     - `hotel_id` (dropdown to select from existing hotels)
+   - On submission, save to the `Event` table and link to selected hotel
+
+2. **Edit Event**
+   - Route: `/events/<int:event_id>/edit` (GET + POST)
+   - Pre-fill form with current event info
+   - Allow all fields to be edited
+   - Save changes to the database
+
+3. **Delete Event**
+   - Route: `/events/<int:event_id>/delete` (POST only)
+   - Include a confirmation in the UI
+
+4. **Event Detail Page**
+   - Route: `/events/<int:event_id>`
+   - Display:
+     - Title
+     - Description
+     - Date range (start to end)
+     - Type
+     - Clickable event link
+     - Hotel it’s assigned to (with clickable link to the hotel page)
+   - Add Edit and Delete buttons (visible only if the user is logged in)
+
+5. **Event List View**
+   - Route: `/events`
+   - Show a searchable table or card grid of events
+   - Display title, dates, hotel name, and type
+   - Add a link to "Create New Event"
+
+6. **Database**
+   - Extend or ensure `Event` model includes:
+     - `id`, `title`, `description`, `start_date`, `end_date`, `event_type`, `event_link`, `hotel_id`, `created_at`
+   - Add `relationship` to `Hotel` model so each event is linked to a hotel
+
+7. **Templates**
+   - Create or update:
+     - `events/list.html`
+     - `events/detail.html`
+     - `events/form.html`
+
+8. **Navigation**
+   - Add an "Events" link in the navbar routing to `/events`
+   - From a hotel detail page, link to its events (filtered view)
+
+🔒 All create/edit/delete event routes should be protected with `@login_required`.
+
+Keep the design clean and modern like the rest of the app and adapted for the dashboard view we have. Return a summary of the new/updated routes, models, and templates.

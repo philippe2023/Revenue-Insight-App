@@ -33,6 +33,11 @@ const navigationItems = [
     icon: Calendar,
   },
   {
+    title: "Event Management",
+    href: "/events-management",
+    icon: Calendar,
+  },
+  {
     title: "Tasks",
     href: "/tasks",
     icon: CheckSquare,
