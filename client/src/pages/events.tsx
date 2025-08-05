@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Search, Calendar, MapPin, Eye, ExternalLink } from "lucide-react";
 import Navigation from "@/components/layout/navigation";
 import Sidebar from "@/components/layout/sidebar";
-import EventCard from "@/components/events/event-card";
+import EventCard from "@/components/event-card";
 import EventForm from "@/components/events/event-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

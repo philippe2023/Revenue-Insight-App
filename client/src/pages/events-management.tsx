@@ -384,11 +384,12 @@ export default function EventsManagement() {
                         </div>
                         <div>
                           <Label htmlFor="category">Category</Label>
-                          <Select name="category">
+                          <Select name="category" defaultValue="">
                             <SelectTrigger>
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="">Select category</SelectItem>
                               <SelectItem value="conference">Conference</SelectItem>
                               <SelectItem value="concert">Concert</SelectItem>
                               <SelectItem value="sports">Sports</SelectItem>
@@ -662,6 +663,7 @@ export default function EventsManagement() {
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="">Select category</SelectItem>
                             <SelectItem value="conference">Conference</SelectItem>
                             <SelectItem value="concert">Concert</SelectItem>
                             <SelectItem value="sports">Sports</SelectItem>
