@@ -136,7 +136,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hotel routes (protected)
   app.get('/api/hotels', requireAuth, async (req: any, res) => {
     try {
-      const hotels = await storage.getHotels('');
+      const { city } = req.query;
+      let hotels;
+      
+      if (city) {
+        hotels = await storage.getHotelsByCity(city as string);
+      } else {
+        hotels = await storage.getHotels('');
+      }
+      
       res.json(hotels);
     } catch (error) {
       console.error("Error fetching hotels:", error);
@@ -300,8 +308,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Event management routes (protected)
-  app.get('/api/events/:id', requireAuth, async (req: any, res) => {
+  // Event management routes 
+  app.get('/api/events/:id', async (req: any, res) => {
     try {
       const event = await storage.getEvent(req.params.id);
       if (!event) {
