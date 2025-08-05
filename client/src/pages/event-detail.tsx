@@ -25,7 +25,7 @@ export default function EventDetail() {
     queryKey: ["/api/events", id],
     queryFn: async () => {
       const response = await apiRequest(`/api/events/${id}`, 'GET');
-      return response;
+      return response as unknown as Event;
     },
   });
 
@@ -34,7 +34,7 @@ export default function EventDetail() {
     queryFn: async () => {
       if (!event?.city) return [];
       const response = await apiRequest(`/api/hotels?city=${encodeURIComponent(event.city)}`, 'GET');
-      return response;
+      return response as unknown as Hotel[];
     },
     enabled: !!event?.city,
   });
@@ -43,7 +43,7 @@ export default function EventDetail() {
     queryKey: ["/api/comments", "event", id],
     queryFn: async () => {
       const response = await apiRequest(`/api/comments?entityType=event&entityId=${id}`, 'GET');
-      return response;
+      return response as unknown as any[];
     },
     enabled: !!id,
   });
@@ -358,7 +358,7 @@ export default function EventDetail() {
                           <Button 
                             variant="link" 
                             size="sm"
-                            onClick={() => setLocation(`/hotels?city=${encodeURIComponent(event.city)}`)}
+                            onClick={() => setLocation(`/hotels?city=${encodeURIComponent(event.city || '')}`)}
                             className="w-full mt-2"
                           >
                             View all {cityHotels.length} hotels

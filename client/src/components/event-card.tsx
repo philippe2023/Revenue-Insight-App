@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, MapPin, Users, ExternalLink, Eye, MoreVertical, MessageCircle, Edit, Trash2, Building2 } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Event } from "@shared/schema";
@@ -21,6 +21,7 @@ interface EventCardProps {
 export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [comment, setComment] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -88,7 +89,7 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
   const handleViewDetails = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = `/events/${event.id}`;
+    setLocation(`/events/${event.id}`);
   };
 
   return (
@@ -204,9 +205,16 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
             {event.city && (
               <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
                 <Building2 className="w-3 h-3 mr-1" />
-                <Link href={`/hotels?city=${encodeURIComponent(event.city)}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setLocation(`/hotels?city=${encodeURIComponent(event.city!)}`);
+                  }}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 underline"
+                >
                   View hotels in {event.city}
-                </Link>
+                </button>
               </div>
             )}
           </div>
