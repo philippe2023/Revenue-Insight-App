@@ -249,6 +249,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/events', async (req: any, res) => {
     try {
       const validatedData = insertEventSchema.parse(req.body);
+      // Convert impactRadius to string if it's a number
+      if (typeof validatedData.impactRadius === 'number') {
+        validatedData.impactRadius = validatedData.impactRadius.toString();
+      }
       const event = await storage.createEvent(validatedData);
       res.status(201).json(event);
     } catch (error) {
@@ -314,6 +318,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const validatedData = insertEventSchema.parse(req.body);
+      // Convert impactRadius to string if it's a number
+      if (typeof validatedData.impactRadius === 'number') {
+        validatedData.impactRadius = validatedData.impactRadius.toString();
+      }
       const event = await storage.updateEvent(id, validatedData);
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
@@ -406,18 +414,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const row of data) {
         try {
           const eventData = {
-            name: row['Event Name'] || row['name'],
-            description: row['Description'] || row['description'],
-            category: row['Category'] || row['category'] || 'conference',
-            startDate: row['Start Date'] || row['startDate'],
-            endDate: row['End Date'] || row['endDate'],
-            location: row['Location'] || row['location'],
-            city: row['City'] || row['city'],
-            state: row['State'] || row['state'],
-            country: row['Country'] || row['country'],
-            expectedAttendees: parseInt(row['Expected Attendees'] || row['expectedAttendees'] || '0') || null,
-            impactRadius: parseFloat(row['Impact Radius'] || row['impactRadius'] || '50'),
-            sourceUrl: row['Source URL'] || row['sourceUrl'],
+            name: (row as any)['Event Name'] || (row as any)['name'],
+            description: (row as any)['Description'] || (row as any)['description'],
+            category: (row as any)['Category'] || (row as any)['category'] || 'conference',
+            startDate: (row as any)['Start Date'] || (row as any)['startDate'],
+            endDate: (row as any)['End Date'] || (row as any)['endDate'],
+            location: (row as any)['Location'] || (row as any)['location'],
+            city: (row as any)['City'] || (row as any)['city'],
+            state: (row as any)['State'] || (row as any)['state'],
+            country: (row as any)['Country'] || (row as any)['country'],
+            expectedAttendees: parseInt((row as any)['Expected Attendees'] || (row as any)['expectedAttendees'] || '0') || null,
+            impactRadius: parseFloat((row as any)['Impact Radius'] || (row as any)['impactRadius'] || '50').toString(),
+            sourceUrl: (row as any)['Source URL'] || (row as any)['sourceUrl'],
             createdBy: req.user.id,
           };
 
@@ -434,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             imported++;
           }
         } catch (error) {
-          errors.push(`Error processing row: ${error.message}`);
+          errors.push(`Error processing row: ${(error as any).message}`);
         }
       }
 

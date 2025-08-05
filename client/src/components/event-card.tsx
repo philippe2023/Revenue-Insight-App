@@ -1,15 +1,55 @@
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, ExternalLink, Eye } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, MapPin, Users, ExternalLink, Eye, MoreVertical, MessageCircle, Edit, Trash2, Building2 } from "lucide-react";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Event } from "@shared/schema";
 
 interface EventCardProps {
   event: Event;
+  onEdit?: (event: Event) => void;
+  onDelete?: (eventId: string) => void;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [comment, setComment] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const commentMutation = useMutation({
+    mutationFn: async (commentText: string) => {
+      return await apiRequest('/api/comments', 'POST', {
+        entityType: 'event',
+        entityId: event.id,
+        content: commentText
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+      setComment("");
+      setShowCommentDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/comments", "event", event.id] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -27,9 +67,33 @@ export function EventCard({ event }: EventCardProps) {
     return diffDays;
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit?.(event);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete?.(event.id);
+  };
+
+  const handleComment = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowCommentDialog(true);
+  };
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = `/events/${event.id}`;
+  };
+
   return (
-    <Link href={`/events/${event.id}`}>
-      <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer h-full border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600">
+    <>
+      <Card className="group hover:shadow-lg transition-all duration-300 h-full border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -47,10 +111,46 @@ export function EventCard({ event }: EventCardProps) {
                 )}
               </div>
             </div>
+            
+            {/* Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleViewDetails}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEdit}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Event
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleComment}>
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Add Comment
+                </DropdownMenuItem>
+                {event.sourceUrl && (
+                  <DropdownMenuItem onClick={(e) => {
+                    e.preventDefault();
+                    window.open(event.sourceUrl!, '_blank');
+                  }}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Source
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleDelete} className="text-red-600 dark:text-red-400">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Event
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 cursor-pointer" onClick={handleViewDetails}>
           {/* Description */}
           {event.description && (
             <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">
@@ -91,51 +191,56 @@ export function EventCard({ event }: EventCardProps) {
             )}
           </div>
 
-          {/* Impact Radius */}
-          {event.impactRadius && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                Impact radius: {event.impactRadius} miles
-              </p>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  // Navigate handled by Link wrapper
-                }}
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                View Details
-              </Button>
-            </div>
+          {/* Impact Radius & Hotel Count */}
+          <div className="flex items-center justify-between">
+            {event.impactRadius && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-1">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  {event.impactRadius} mile radius
+                </p>
+              </div>
+            )}
             
-            {event.sourceUrl && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.open(event.sourceUrl!, '_blank');
-                }}
-                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </Button>
+            {event.city && (
+              <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
+                <Building2 className="w-3 h-3 mr-1" />
+                <Link href={`/hotels?city=${encodeURIComponent(event.city)}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+                  View hotels in {event.city}
+                </Link>
+              </div>
             )}
           </div>
         </CardContent>
       </Card>
-    </Link>
+
+      {/* Comment Dialog */}
+      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Comment to "{event.name}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Enter your comment..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCommentDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => commentMutation.mutate(comment)}
+              disabled={!comment.trim() || commentMutation.isPending}
+            >
+              {commentMutation.isPending ? "Adding..." : "Add Comment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

@@ -13,11 +13,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { eventApi } from "@/lib/api";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Events() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [searchCity, setSearchCity] = useState("");
   const [searchStartDate, setSearchStartDate] = useState("");
   const [searchEndDate, setSearchEndDate] = useState("");
@@ -221,7 +223,12 @@ export default function Events() {
                 Discover events and analyze their impact on hotel performance
               </p>
             </div>
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <Dialog open={isFormOpen} onOpenChange={(open) => {
+              setIsFormOpen(open);
+              if (!open) {
+                setSelectedEvent(null);
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                   <Plus className="w-4 h-4 mr-2" />
@@ -230,10 +237,35 @@ export default function Events() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Event</DialogTitle>
+                  <DialogTitle>{selectedEvent ? 'Edit Event' : 'Add New Event'}</DialogTitle>
                 </DialogHeader>
                 <EventForm 
-                  onSubmit={createMutation.mutate}
+                  event={selectedEvent}
+                  onSubmit={(data) => {
+                    if (selectedEvent) {
+                      // Update existing event
+                      apiRequest(`/api/events/${selectedEvent.id}`, 'PUT', data)
+                        .then(() => {
+                          toast({
+                            title: "Success",
+                            description: "Event updated successfully",
+                          });
+                          setIsFormOpen(false);
+                          setSelectedEvent(null);
+                          queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+                        })
+                        .catch((error) => {
+                          toast({
+                            title: "Error",
+                            description: error.message,
+                            variant: "destructive",
+                          });
+                        });
+                    } else {
+                      // Create new event
+                      createMutation.mutate(data);
+                    }
+                  }}
                   isLoading={createMutation.isPending}
                 />
               </DialogContent>
@@ -295,7 +327,32 @@ export default function Events() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredEvents.map((event: any) => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCard 
+                      key={event.id} 
+                      event={event} 
+                      onEdit={(event) => {
+                        setSelectedEvent(event);
+                        setIsFormOpen(true);
+                      }}
+                      onDelete={async (eventId) => {
+                        if (confirm('Are you sure you want to delete this event?')) {
+                          try {
+                            await apiRequest(`/api/events/${eventId}`, 'DELETE');
+                            queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+                            toast({
+                              title: "Success",
+                              description: "Event deleted successfully",
+                            });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error.message,
+                              variant: "destructive",
+                            });
+                          }
+                        }
+                      }}
+                    />
                   ))}
                 </div>
               )}
@@ -304,7 +361,33 @@ export default function Events() {
             <TabsContent value="upcoming" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {upcomingEvents?.map((event: any) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard 
+                    key={event.id} 
+                    event={event}
+                    onEdit={(event) => {
+                      setSelectedEvent(event);
+                      setIsFormOpen(true);
+                    }}
+                    onDelete={async (eventId) => {
+                      if (confirm('Are you sure you want to delete this event?')) {
+                        try {
+                          await apiRequest(`/api/events/${eventId}`, 'DELETE');
+                          queryClient.invalidateQueries({ queryKey: ['/api/events'] });
+                          queryClient.invalidateQueries({ queryKey: ['/api/events/upcoming'] });
+                          toast({
+                            title: "Success",
+                            description: "Event deleted successfully",
+                          });
+                        } catch (error: any) {
+                          toast({
+                            title: "Error",
+                            description: error.message,
+                            variant: "destructive",
+                          });
+                        }
+                      }
+                    }}
+                  />
                 ))}
               </div>
             </TabsContent>

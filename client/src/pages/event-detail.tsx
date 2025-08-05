@@ -1,58 +1,69 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRoute, useLocation } from "wouter";
-import { Link } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import type { Event } from "@shared/schema";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Edit, 
-  Trash2,
-  ExternalLink,
-  Building2,
-  Globe,
-  Clock
-} from "lucide-react";
+import { useParams, useLocation } from "wouter";
+import { ArrowLeft, Calendar, MapPin, Users, ExternalLink, Edit, Trash2, MessageCircle, Building2 } from "lucide-react";
 import Navigation from "@/components/layout/navigation";
 import Sidebar from "@/components/layout/sidebar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import type { Event, Hotel } from "@shared/schema";
 
 export default function EventDetail() {
-  const [, params] = useRoute("/events/:id");
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCommentDialog, setShowCommentDialog] = useState(false);
+  const [comment, setComment] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: event, isLoading, error } = useQuery<Event>({
-    queryKey: ["/api/events", params?.id],
-    enabled: !!params?.id,
+  const { data: event, isLoading } = useQuery({
+    queryKey: ["/api/events", id],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/events/${id}`, 'GET');
+      return response;
+    },
   });
 
-  const { data: hotels } = useQuery({
-    queryKey: ["/api/hotels"],
-    retry: false,
+  const { data: cityHotels } = useQuery({
+    queryKey: ["/api/hotels", "city", event?.city],
+    queryFn: async () => {
+      if (!event?.city) return [];
+      const response = await apiRequest(`/api/hotels?city=${encodeURIComponent(event.city)}`, 'GET');
+      return response;
+    },
+    enabled: !!event?.city,
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest(`/api/events/${id}`, "DELETE");
+  const { data: comments } = useQuery({
+    queryKey: ["/api/comments", "event", id],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/comments?entityType=event&entityId=${id}`, 'GET');
+      return response;
+    },
+    enabled: !!id,
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: async (commentText: string) => {
+      return await apiRequest('/api/comments', 'POST', {
+        entityType: 'event',
+        entityId: id,
+        content: commentText
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/events"] });
       toast({
         title: "Success",
-        description: "Event deleted successfully",
+        description: "Comment added successfully",
       });
-      setLocation("/events-management");
+      setComment("");
+      setShowCommentDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/comments", "event", id] });
     },
     onError: (error) => {
       toast({
@@ -63,9 +74,47 @@ export default function EventDetail() {
     },
   });
 
-  // Get hotels in the same city
-  const getHotelsInCity = (city: string) => {
-    return hotels?.filter(hotel => hotel.city?.toLowerCase() === city.toLowerCase()) || [];
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/events/${id}`, 'DELETE');
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+      setLocation("/events");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getDuration = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const handleDelete = () => {
+    if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      deleteMutation.mutate();
+    }
   };
 
   if (isLoading) {
@@ -74,13 +123,10 @@ export default function EventDetail() {
         <Navigation />
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
-            <div className="max-w-4xl mx-auto">
-              <div className="animate-pulse space-y-6">
-                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-32"></div>
-                <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-                <div className="h-32 bg-slate-200 dark:bg-slate-700 rounded-lg"></div>
-              </div>
+          <main className="flex-1 p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded mb-4"></div>
+              <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
             </div>
           </main>
         </div>
@@ -88,24 +134,20 @@ export default function EventDetail() {
     );
   }
 
-  if (error || !event) {
+  if (!event) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <Navigation />
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
-            <div className="max-w-4xl mx-auto">
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Calendar className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Event not found</h3>
-                  <p className="text-slate-600 dark:text-slate-400 mb-4">The event you're looking for doesn't exist or has been removed.</p>
-                  <Link href="/events-management">
-                    <Button>Back to Events</Button>
-                  </Link>
-                </CardContent>
-              </Card>
+          <main className="flex-1 p-6">
+            <div className="text-center py-12">
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Event Not Found</h1>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">The event you're looking for doesn't exist.</p>
+              <Button onClick={() => setLocation("/events")}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Events
+              </Button>
             </div>
           </main>
         </div>
@@ -113,275 +155,256 @@ export default function EventDetail() {
     );
   }
 
-  const cityHotels = event.city ? getHotelsInCity(event.city) : [];
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <Navigation />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6 min-w-0 max-w-full overflow-hidden">
-          <div className="max-w-4xl mx-auto">
+    <>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Navigation />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-6">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <Link href="/events-management">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Events
-                </Button>
-              </Link>
-              <div className="flex-1" />
+            <div className="flex items-center justify-between mb-6">
               <Button 
-                variant="outline" 
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-red-600 dark:text-red-400"
+                variant="ghost" 
+                onClick={() => setLocation("/events")}
+                className="mb-4"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Events
               </Button>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCommentDialog(true)}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Add Comment
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation(`/events/${id}/edit`)}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
             </div>
 
-            {/* Event Header */}
-            <Card className="mb-6">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-2xl mb-3">{event.name}</CardTitle>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge variant="outline" className="text-sm">
-                        {event.category || 'Event'}
-                      </Badge>
-                      {event.isActive === false && (
-                        <Badge variant="destructive" className="text-sm">
-                          Inactive
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {event.description && (
-                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{event.description}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Event Details Grid */}
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Main Content */}
+            {/* Event Details */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Event Info */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Event Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      Event Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Start Date</p>
-                        <p className="font-medium">{new Date(event.startDate).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">End Date</p>
-                        <p className="font-medium">{new Date(event.endDate).toLocaleDateString()}</p>
+                        <CardTitle className="text-2xl mb-2">{event.name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {event.category || 'Event'}
+                          </Badge>
+                          {event.isActive === false && (
+                            <Badge variant="destructive">
+                              Inactive
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <Separator />
-                    <div className="grid grid-cols-2 gap-4">
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {event.description && (
                       <div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Duration</p>
-                        <p className="font-medium">
-                          {Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
-                        </p>
+                        <h3 className="font-semibold mb-2">Description</h3>
+                        <p className="text-slate-600 dark:text-slate-400">{event.description}</p>
                       </div>
-                      {event.expectedAttendees && (
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Date Range */}
+                      <div className="flex items-center text-sm">
+                        <Calendar className="w-4 h-4 mr-2 text-blue-600" />
                         <div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Expected Attendees</p>
-                          <p className="font-medium">{event.expectedAttendees.toLocaleString()}</p>
+                          <p className="font-medium">Duration</p>
+                          <p className="text-slate-600 dark:text-slate-400">
+                            {formatDate(event.startDate)}
+                            {event.startDate !== event.endDate && (
+                              <span> - {formatDate(event.endDate)} ({getDuration(event.startDate, event.endDate)} days)</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Location */}
+                      <div className="flex items-center text-sm">
+                        <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                        <div>
+                          <p className="font-medium">Location</p>
+                          <p className="text-slate-600 dark:text-slate-400">
+                            {event.location && `${event.location}, `}
+                            {event.city}
+                            {event.state && `, ${event.state}`}
+                            {event.country && `, ${event.country}`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Attendees */}
+                      {event.expectedAttendees && (
+                        <div className="flex items-center text-sm">
+                          <Users className="w-4 h-4 mr-2 text-purple-600" />
+                          <div>
+                            <p className="font-medium">Expected Attendees</p>
+                            <p className="text-slate-600 dark:text-slate-400">
+                              {event.expectedAttendees.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Impact Radius */}
+                      {event.impactRadius && (
+                        <div className="flex items-center text-sm">
+                          <div className="w-4 h-4 mr-2 bg-orange-600 rounded-full"></div>
+                          <div>
+                            <p className="font-medium">Impact Radius</p>
+                            <p className="text-slate-600 dark:text-slate-400">
+                              {event.impactRadius} miles
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
+
+                    {event.sourceUrl && (
+                      <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(event.sourceUrl!, '_blank')}
+                          className="w-full justify-center"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View Original Source
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
-                {/* Location Information */}
+                {/* Comments Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MapPin className="w-5 h-5" />
-                      Location
+                    <CardTitle className="flex items-center">
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      Comments ({comments?.length || 0})
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {event.location && (
-                      <div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Venue</p>
-                        <p className="font-medium">{event.location}</p>
+                  <CardContent>
+                    {comments && comments.length > 0 ? (
+                      <div className="space-y-4">
+                        {comments.map((comment: any) => (
+                          <div key={comment.id} className="border-l-2 border-blue-200 dark:border-blue-800 pl-4">
+                            <p className="text-slate-700 dark:text-slate-300">{comment.content}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                              {new Date(comment.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                    <div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Address</p>
-                      <p className="font-medium">
-                        {event.city}
-                        {event.state && `, ${event.state}`}
-                        {event.country && `, ${event.country}`}
+                    ) : (
+                      <p className="text-slate-500 dark:text-slate-400 text-center py-4">
+                        No comments yet. Be the first to add one!
                       </p>
-                    </div>
-                    {event.impactRadius && (
-                      <div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Impact Radius</p>
-                        <p className="font-medium">{event.impactRadius} miles</p>
-                      </div>
                     )}
                   </CardContent>
                 </Card>
-
-                {/* Hotels in Same City */}
-                {event.city && cityHotels.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Building2 className="w-5 h-5" />
-                        Hotels in {event.city} ({cityHotels.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {cityHotels.slice(0, 5).map((hotel) => (
-                          <div key={hotel.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-slate-900 dark:text-white">{hotel.name}</h4>
-                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                                {hotel.address && `${hotel.address}, `}{hotel.city}
-                                {hotel.state && `, ${hotel.state}`}
-                              </p>
-                              {hotel.totalRooms && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                  {hotel.totalRooms} rooms
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-right">
-                              <Link href={`/hotels/${hotel.id}`}>
-                                <Button variant="outline" size="sm">
-                                  View Hotel
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                        {cityHotels.length > 5 && (
-                          <div className="text-center pt-2">
-                            <Link href="/hotels">
-                              <Button variant="outline" size="sm">
-                                View all {cityHotels.length} hotels in {event.city}
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
 
               {/* Sidebar */}
               <div className="space-y-6">
-                {/* Event Details */}
+                {/* Related Hotels */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="w-5 h-5" />
-                      Event Details
+                    <CardTitle className="flex items-center">
+                      <Building2 className="w-5 h-5 mr-2" />
+                      Hotels in {event.city}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-500" />
-                        <span className="text-sm text-slate-600 dark:text-slate-400">Created</span>
+                  <CardContent>
+                    {cityHotels && cityHotels.length > 0 ? (
+                      <div className="space-y-2">
+                        {cityHotels.slice(0, 5).map((hotel: Hotel) => (
+                          <div 
+                            key={hotel.id}
+                            className="p-2 border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                            onClick={() => setLocation(`/hotels/${hotel.id}`)}
+                          >
+                            <p className="font-medium text-sm">{hotel.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {hotel.address}
+                            </p>
+                          </div>
+                        ))}
+                        {cityHotels.length > 5 && (
+                          <Button 
+                            variant="link" 
+                            size="sm"
+                            onClick={() => setLocation(`/hotels?city=${encodeURIComponent(event.city)}`)}
+                            className="w-full mt-2"
+                          >
+                            View all {cityHotels.length} hotels
+                          </Button>
+                        )}
                       </div>
-                      <span className="text-sm">
-                        {new Date(event.createdAt!).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {event.updatedAt && event.updatedAt !== event.createdAt && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Edit className="w-4 h-4 text-slate-500" />
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Updated</span>
-                        </div>
-                        <span className="text-sm">
-                          {new Date(event.updatedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {event.sourceUrl && (
-                      <a href={event.sourceUrl} target="_blank" rel="noopener noreferrer" className="block">
-                        <Button variant="outline" className="w-full justify-start">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          View Source
-                        </Button>
-                      </a>
-                    )}
-                    {event.city && (
-                      <Link href={`/hotels?city=${encodeURIComponent(event.city)}`} className="block">
-                        <Button variant="outline" className="w-full justify-start">
-                          <Building2 className="w-4 h-4 mr-2" />
-                          View Hotels in {event.city}
-                        </Button>
-                      </Link>
+                    ) : (
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">
+                        No hotels found in {event.city}
+                      </p>
                     )}
                   </CardContent>
                 </Card>
               </div>
             </div>
-
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Event</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Are you sure you want to delete "{event.name}"? This action cannot be undone and will remove all associated data.
-                  </p>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => {
-                      deleteMutation.mutate(event.id);
-                      setShowDeleteDialog(false);
-                    }}
-                    disabled={deleteMutation.isPending}
-                  >
-                    {deleteMutation.isPending ? "Deleting..." : "Delete Event"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+
+      {/* Comment Dialog */}
+      <Dialog open={showCommentDialog} onOpenChange={setShowCommentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Comment to "{event.name}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Enter your comment..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCommentDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => commentMutation.mutate(comment)}
+              disabled={!comment.trim() || commentMutation.isPending}
+            >
+              {commentMutation.isPending ? "Adding..." : "Add Comment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
