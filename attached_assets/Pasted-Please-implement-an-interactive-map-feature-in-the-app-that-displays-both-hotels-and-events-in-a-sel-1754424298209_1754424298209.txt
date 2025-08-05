@@ -1,0 +1,60 @@
+Please implement an interactive map feature in the app that displays both hotels and events in a selected city or country, similar to Airbnb’s map view.
+
+🗺️ Interactive Map Feature Requirements:
+
+1. **Overview**
+   - Display a map with markers for:
+     - Hotels (use hotel-specific marker)
+     - Events (use different icons or colored markers based on event type)
+   - Allow user to filter by:
+     - Country
+     - City (both based on hotel/event data availability)
+
+2. **Technologies**
+   - use the most appropriate to our current tech stack
+
+3. **Hotel Marker**
+   - Icon: Hotel-style marker (e.g., 🏨 or a custom pin)
+   - Tooltip or popup on click:
+     - Hotel name
+     - Location
+     - Clickable link to hotel detail page
+
+4. **Event Marker**
+   - Use custom icons or colors for event types (e.g., sports = ⚽, expo = 🧳, concert = 🎵)
+   - Tooltip or popup on click:
+     - Event title
+     - Date
+     - Linked hotel name (if assigned)
+     - Clickable link to event detail page
+
+5. **Filter System**
+   - Add dropdowns for Country and City (populated from available data)
+   - On filter change:
+     - Update map to show only matching hotels/events
+     - Center the map on the selected city or country
+   - Optional: Add “Reset” button to show all
+
+
+7. **Frontend**
+   - Create a new page at `/map`
+   - Add a responsive and clean UI using Tailwind or Bootstrap
+   - Add the interactive map section and filters above it
+
+8. **Database Assumptions**
+   - `Hotel` model must have `city`, `country`, `latitude`, `longitude` fields
+   - `Event` model must have `city`, `country`, `latitude`, `longitude` fields (use hotel location if not directly stored)
+
+9. **User Experience**
+   - Map should default to world or Europe view on load
+   - Auto-zoom when a city or country is selected
+   - Popups should be styled professionally and responsive
+   - Display a short loading spinner while map is updating
+
+Organize the files clearly: update `routes.py`, create a new `map.html` template, and include any JavaScript in `static/js/map.js`.
+
+Please return a summary of:
+- New routes created
+- Files or templates added
+- Sample data structure used for map markers
+- Any required updates to models

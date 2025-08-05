@@ -50,6 +50,8 @@ export const hotels = pgTable("hotels", {
   state: varchar("state", { length: 50 }),
   country: varchar("country", { length: 100 }),
   postalCode: varchar("postal_code", { length: 20 }),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
   website: varchar("website", { length: 255 }),
@@ -82,6 +84,8 @@ export const events = pgTable("events", {
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 50 }),
   country: varchar("country", { length: 100 }),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   expectedAttendees: integer("expected_attendees"),
   impactRadius: decimal("impact_radius", { precision: 8, scale: 2 }), // kilometers
   sourceUrl: varchar("source_url"),

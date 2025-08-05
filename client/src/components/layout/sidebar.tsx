@@ -7,7 +7,8 @@ import {
   CheckSquare,
   TrendingUp,
   MessageSquare,
-  Users
+  Users,
+  MapPin
 } from "lucide-react";
 
 const navigationItems = [
@@ -53,6 +54,11 @@ const navigationItems = [
     href: "/ai-chat",
     icon: MessageSquare,
     indicator: true
+  },
+  {
+    title: "Interactive Map",
+    href: "/map",
+    icon: MapPin,
   },
 ];
 

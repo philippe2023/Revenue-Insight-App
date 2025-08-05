@@ -15,6 +15,7 @@ import { z } from "zod";
 import { initializeTestData } from "./data-init";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import { getCoordinatesForCity, addRandomOffset } from "./sample-coordinates";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // CORS configuration
@@ -800,6 +801,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error processing AI chat:", error);
       res.status(500).json({ message: "Failed to process AI chat" });
+    }
+  });
+
+  // Populate coordinates for existing hotels and events
+  app.post('/api/populate-coordinates', async (req, res) => {
+    try {
+      let hotelUpdates = 0;
+      let eventUpdates = 0;
+
+      // Update hotels with coordinates
+      const hotels = await storage.getAllHotels();
+      for (const hotel of hotels) {
+        if (!hotel.latitude || !hotel.longitude) {
+          const coords = getCoordinatesForCity(hotel.city || '');
+          if (coords) {
+            const offsetCoords = addRandomOffset(coords.latitude, coords.longitude);
+            await storage.updateHotel(hotel.id, {
+              latitude: offsetCoords.latitude.toString(),
+              longitude: offsetCoords.longitude.toString()
+            });
+            hotelUpdates++;
+          }
+        }
+      }
+
+      // Update events with coordinates
+      const events = await storage.getAllEvents();
+      for (const event of events) {
+        if (!event.latitude || !event.longitude) {
+          const coords = getCoordinatesForCity(event.city || '');
+          if (coords) {
+            const offsetCoords = addRandomOffset(coords.latitude, coords.longitude);
+            await storage.updateEvent(event.id, {
+              latitude: offsetCoords.latitude.toString(),
+              longitude: offsetCoords.longitude.toString()
+            });
+            eventUpdates++;
+          }
+        }
+      }
+
+      res.json({ 
+        message: "Coordinates populated successfully",
+        hotelUpdates,
+        eventUpdates
+      });
+    } catch (error) {
+      console.error("Error populating coordinates:", error);
+      res.status(500).json({ message: "Failed to populate coordinates" });
     }
   });
 

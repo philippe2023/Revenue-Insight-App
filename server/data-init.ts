@@ -1,4 +1,5 @@
 import { storage } from './storage';
+import { getCoordinatesForCity, addRandomOffset } from "./sample-coordinates";
 
 export async function initializeTestData() {
   try {
@@ -22,7 +23,11 @@ export async function initializeTestData() {
       demoUser = { id: 'demo-user' };
     }
 
-    // Create test hotels
+    // Create test hotels with coordinates
+    const nyCoords = getCoordinatesForCity('New York');
+    const miamiCoords = getCoordinatesForCity('Miami');
+    const denverCoords = getCoordinatesForCity('Denver');
+    
     const hotels = await Promise.all([
       storage.createHotel({
         name: 'Grand Plaza Hotel',
@@ -32,6 +37,8 @@ export async function initializeTestData() {
         state: 'NY',
         country: 'USA',
         postalCode: '10001',
+        latitude: nyCoords ? addRandomOffset(nyCoords.latitude, nyCoords.longitude).latitude.toString() : null,
+        longitude: nyCoords ? addRandomOffset(nyCoords.latitude, nyCoords.longitude).longitude.toString() : null,
         phone: '+1-555-0123',
         email: 'info@grandplaza.com',
         website: 'https://grandplaza.com',
@@ -48,6 +55,8 @@ export async function initializeTestData() {
         state: 'FL',
         country: 'USA',
         postalCode: '33139',
+        latitude: miamiCoords ? addRandomOffset(miamiCoords.latitude, miamiCoords.longitude).latitude.toString() : null,
+        longitude: miamiCoords ? addRandomOffset(miamiCoords.latitude, miamiCoords.longitude).longitude.toString() : null,
         phone: '+1-555-0456',
         email: 'reservations@seasideresort.com',
         website: 'https://seasideresort.com',
@@ -64,6 +73,8 @@ export async function initializeTestData() {
         state: 'CO',
         country: 'USA',
         postalCode: '80202',
+        latitude: denverCoords ? addRandomOffset(denverCoords.latitude, denverCoords.longitude).latitude.toString() : null,
+        longitude: denverCoords ? addRandomOffset(denverCoords.latitude, denverCoords.longitude).longitude.toString() : null,
         phone: '+1-555-0789',
         email: 'info@mountainview.com',
         website: 'https://mountainview.com',
@@ -76,7 +87,11 @@ export async function initializeTestData() {
 
     console.log(`Created ${hotels.length} test hotels`);
 
-    // Create test events
+    // Create test events with coordinates
+    const sfCoords = getCoordinatesForCity('San Francisco');
+    const austinCoords = getCoordinatesForCity('Austin');
+    const chicagoCoords = getCoordinatesForCity('Chicago');
+    
     const events = await Promise.all([
       storage.createEvent({
         name: 'Tech Conference 2025',
@@ -88,6 +103,8 @@ export async function initializeTestData() {
         city: 'San Francisco',
         state: 'CA',
         country: 'USA',
+        latitude: sfCoords ? addRandomOffset(sfCoords.latitude, sfCoords.longitude).latitude.toString() : null,
+        longitude: sfCoords ? addRandomOffset(sfCoords.latitude, sfCoords.longitude).longitude.toString() : null,
         expectedAttendees: 5000,
         impactRadius: '10.0',
         sourceUrl: 'https://techconf2025.com',
@@ -104,6 +121,8 @@ export async function initializeTestData() {
         city: 'Austin',
         state: 'TX',
         country: 'USA',
+        latitude: austinCoords ? addRandomOffset(austinCoords.latitude, austinCoords.longitude).latitude.toString() : null,
+        longitude: austinCoords ? addRandomOffset(austinCoords.latitude, austinCoords.longitude).longitude.toString() : null,
         expectedAttendees: 15000,
         impactRadius: '15.0',
         sourceUrl: 'https://musicfest.com',
@@ -120,6 +139,8 @@ export async function initializeTestData() {
         city: 'Chicago',
         state: 'IL',
         country: 'USA',
+        latitude: chicagoCoords ? addRandomOffset(chicagoCoords.latitude, chicagoCoords.longitude).latitude.toString() : null,
+        longitude: chicagoCoords ? addRandomOffset(chicagoCoords.latitude, chicagoCoords.longitude).longitude.toString() : null,
         expectedAttendees: 8000,
         impactRadius: '12.0',
         sourceUrl: 'https://tradeshow.com',

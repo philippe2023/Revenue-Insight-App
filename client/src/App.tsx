@@ -16,6 +16,7 @@ import EventDetail from "@/pages/event-detail";
 import Tasks from "@/pages/tasks";
 import Analytics from "@/pages/analytics";
 import AIChat from "@/pages/ai-chat";
+import MapPage from "@/pages/map";
 import AuthPage from "@/pages/auth-page";
 import Landing from "@/pages/landing";
 
@@ -45,6 +46,7 @@ function Router() {
           <Route path="/tasks" component={Tasks} />
           <Route path="/analytics" component={Analytics} />
           <Route path="/ai-chat" component={AIChat} />
+          <Route path="/map" component={MapPage} />
         </>
       ) : (
         // Unauthenticated routes
